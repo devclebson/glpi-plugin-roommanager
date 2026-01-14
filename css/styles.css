@@ -1,0 +1,54 @@
+/* Container Geral */
+.roommanager-wrapper {
+    padding: 15px;
+}
+
+/* Tabela */
+.room-grid th, .room-grid td {
+    vertical-align: middle;
+}
+
+.room-col { 
+    background: #fff; 
+    width: 250px; 
+    min-width: 200px; /* Garante que não diminua demais */
+    font-weight: bold; 
+    text-align: left !important; 
+    border-right: 1px solid #eee;
+    white-space: nowrap; /* Impede que o texto quebre linhas */
+}
+
+.slot-header {
+    background-color: #e9ecef;
+    min-width: 120px;
+}
+
+/* Célula Ocupada */
+.booking-slot.occupied {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+    border-radius: 4px;
+    padding: 8px 4px;
+    font-size: 0.85rem;
+}
+
+/* Se a reserva for minha */
+.booking-slot.my-booking {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border-color: #90caf9;
+}
+
+/* Botão Livre */
+.btn-book {
+    border-style: dashed;
+    opacity: 0.6;
+    transition: all 0.2s;
+}
+
+.btn-book:hover {
+    opacity: 1;
+    background-color: #d4edda;
+    border-style: solid;
+}
