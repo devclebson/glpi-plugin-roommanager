@@ -3,7 +3,7 @@
  * plugins/roommanager/setup.php
  */
 
-define('PLUGIN_ROOMMANAGER_VERSION', '1.0.0');
+define('PLUGIN_ROOMMANAGER_VERSION', '1.0.1');
 
 function plugin_init_roommanager() {
    global $PLUGIN_HOOKS;
