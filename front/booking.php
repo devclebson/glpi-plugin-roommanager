@@ -7,6 +7,12 @@ Html::header("Reserva de Salas", $_SERVER['PHP_SELF'], "tools", "plugin_roommana
 ?>
 
 <style>
+    /* --- CORREÇÃO DA LOGO --- */
+    :root {
+        /* Força o GLPI a buscar a imagem na raiz, e não dentro do plugin */
+        --bar-logo-glpi: url('/pics/scc/logo_scc.png') !important;
+        --bar-logo-glpi-collapsed: url('/pics/scc/logo_scc.png') !important;
+    }
     /* --- 1. VISUAL DOS CAMPOS --- */
     .roommanager-container select.form-select,
     .roommanager-container input.form-control {
