@@ -1,54 +1,128 @@
-/* Container Geral */
-.roommanager-wrapper {
-    padding: 15px;
+/* plugins/roommanager/css/style.css */
+
+:root { 
+    --scc-blue: #003366;
+    --scc-green: #28a745;
+    --scc-light-bg: #f8f9fa;
+    --scc-free-bg: #e6f9ec; /* Novo fundo para livre */
+    --scc-free-border: #a8e4bc; /* Nova borda para livre */
 }
 
-/* Tabela */
-.room-grid th, .room-grid td {
-    vertical-align: middle;
+.room-grid-container { 
+    margin: 20px; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
 }
 
+/* Container da Tabela */
+.table-responsive { 
+    overflow-x: auto; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #e9ecef;
+}
+
+.room-grid { width: 100%; border-collapse: separate; border-spacing: 0; }
+
+/* Células e Cabeçalho */
+.room-grid th, .room-grid td { 
+    padding: 8px; 
+    text-align: center; 
+    vertical-align: middle; 
+    border-bottom: 1px solid #f1f3f5;
+    border-right: 1px dashed #f1f3f5;
+}
+
+.room-grid th { 
+    background-color: white; 
+    color: #868e96; 
+    font-weight: 600; 
+    text-transform: uppercase; 
+    font-size: 0.75em;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e9ecef;
+    height: 50px;
+    min-width: 80px; /* Garante largura mínima para o horário */
+}
+
+/* Coluna Fixa (Nome da Sala) */
 .room-col { 
-    background: #fff; 
-    width: 250px; 
-    min-width: 200px; /* Garante que não diminua demais */
-    font-weight: bold; 
-    text-align: left !important; 
-    border-right: 1px solid #eee;
-    white-space: nowrap; /* Impede que o texto quebre linhas */
+    position: sticky; left: 0; background: #fff; z-index: 10; 
+    width: 200px; text-align: left !important; 
+    border-right: 2px solid #e9ecef !important;
+    padding-left: 20px !important;
+}
+.room-name { color: var(--scc-blue); font-size: 0.9em; font-weight: bold; }
+.room-capacity { color: #adb5bd; font-size: 0.75em; margin-top: 2px; }
+
+/* --- ESTILO 1: BOTÃO LIVRE (Melhorado) --- */
+.btn-reservar { 
+    background-color: var(--scc-free-bg); /* Fundo verdinho claro (não mais transparente) */
+    color: var(--scc-green);       
+    border: 1px solid var(--scc-free-border); /* Borda sólida suave */
+    border-radius: 6px; 
+    width: 100%; height: 100%; min-height: 45px;
+    cursor: pointer; 
+    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
 }
 
-.slot-header {
-    background-color: #e9ecef;
-    min-width: 120px;
+/* Hover: Fica mais escuro para dar feedback */
+.btn-reservar:hover { 
+    background-color: #d1e7dd; 
+    border-color: var(--scc-green);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(40, 167, 69, 0.15);
 }
 
-/* Célula Ocupada */
-.booking-slot.occupied {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ef9a9a;
+/* --- ESTILO 2: MINHA RESERVA --- */
+.minha-reserva { 
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white; 
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    min-height: 45px;
+    box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
+    position: relative;
+    text-align: left;
+    display: flex; flex-direction: column; justify-content: center;
+    transition: transform 0.2s;
+}
+.minha-reserva:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3); }
+
+/* --- ESTILO 3: OCUPADO POR OUTROS --- */
+.ocupado:not(.minha-reserva) {
+    background-color: #f8f9fa;
+    border-left: 4px solid #dee2e6;
+    color: #495057;
     border-radius: 4px;
-    padding: 8px 4px;
-    font-size: 0.85rem;
+    padding: 6px;
+    min-height: 45px;
+    text-align: left;
+    display: flex; flex-direction: column; justify-content: center;
 }
 
-/* Se a reserva for minha */
-.booking-slot.my-booking {
-    background-color: #e3f2fd;
-    color: #1565c0;
-    border-color: #90caf9;
-}
+/* Textos dentro dos eventos */
+.event-title { font-weight: bold; font-size: 0.75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
+.event-user { font-size: 0.7em; opacity: 0.9; }
+.ocupado:not(.minha-reserva) .event-user { color: #868e96; font-style: italic; }
 
-/* Botão Livre */
-.btn-book {
-    border-style: dashed;
-    opacity: 0.6;
-    transition: all 0.2s;
+/* Botão de Cancelar (Lixeira) */
+.btn-cancelar { 
+    position: absolute; top: 2px; right: 2px; 
+    color: white; background: rgba(255,255,255,0.25); 
+    border: none; border-radius: 4px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.75em;
 }
+.btn-cancelar:hover { background: rgba(220, 53, 69, 0.9); }
 
-.btn-book:hover {
-    opacity: 1;
-    background-color: #d4edda;
-    border-style: solid;
+/* Ajuste Mobile */
+@media (max-width: 768px) {
+    .room-col { width: 120px; padding-left: 10px !important; }
+    .room-name { font-size: 0.8em; }
+    .btn-reservar { min-height: 35px; }
 }

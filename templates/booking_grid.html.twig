@@ -1,154 +1,388 @@
-<div class="roommanager-wrapper">
+{# plugins/roommanager/templates/booking_grid.html.twig #}
+
+<style>
+    /* --- CSS INTEGRADO --- */
+    :root { 
+        --scc-blue: #003366;
+        --scc-green: #28a745;
+        --scc-light-bg: #f8f9fa;
+        --scc-free-bg: #e6f9ec;
+        --scc-free-border: #a8e4bc;
+    }
+
+    .room-grid-container { margin: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
-    {# Cabeçalho com Seletor de Data #}
-    <div class="card mb-3">
-        <div class="card-body d-flex justify-content-between align-items-center">
-            <h2 class="m-0"><i class="ti ti-calendar"></i> Reservas para {{ date|date('d/m/Y') }}</h2>
-            <form method="GET" class="d-flex gap-2">
-                <input type="date" name="date" class="form-control" value="{{ date }}">
-                <button type="submit" class="btn btn-primary">Buscar</button>
+    /* Container da Tabela */
+    .table-responsive { 
+        overflow-x: auto; /* Permite rolar para o lado se tiver muitos horários */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-radius: 12px;
+        background: white;
+        border: 1px solid #e9ecef;
+    }
+    .room-grid { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+    
+    /* Células Padronizadas */
+    .room-grid th, .room-grid td { 
+        padding: 6px; text-align: center; vertical-align: middle; 
+        border-bottom: 1px solid #f1f3f5; border-right: 1px dashed #f1f3f5;
+        /* AQUI ESTÁ O SEGREDO DO TAMANHO FIXO: */
+        width: 80px; 
+        min-width: 80px;
+        max-width: 80px;
+        box-sizing: border-box;
+    }
+
+    /* Cabeçalho de Horários */
+    .room-grid th { 
+        background-color: white; color: #868e96; font-weight: 600; 
+        text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef; height: 50px;
+    }
+    
+    /* Coluna Sala (Fixa a Esquerda) */
+    .room-col { 
+        position: sticky; left: 0; background: #fff; z-index: 10; 
+        width: 200px !important; min-width: 200px !important; max-width: 200px !important;
+        text-align: left !important; padding-left: 20px !important;
+        border-right: 2px solid #e9ecef !important;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.02); /* Sombra suave para separar */
+    }
+    .room-name { color: var(--scc-blue); font-size: 0.9em; font-weight: bold; white-space: normal; }
+    .room-capacity { color: #adb5bd; font-size: 0.75em; margin-top: 2px; }
+    
+    /* Botão Livre (+) */
+    .btn-reservar { 
+        background-color: var(--scc-free-bg); color: var(--scc-green);       
+        border: 1px solid var(--scc-free-border); border-radius: 6px; 
+        width: 100%; height: 45px; /* Altura Fixa */
+        cursor: pointer; transition: all 0.2s ease;
+        display: flex; align-items: center; justify-content: center; font-weight: bold;
+    }
+    .btn-reservar:hover { 
+        background-color: #d1e7dd; border-color: var(--scc-green);
+        transform: translateY(-1px); box-shadow: 0 2px 5px rgba(40, 167, 69, 0.15);
+    }
+    
+    /* Minha Reserva */
+    .minha-reserva { 
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: white; border: none; border-radius: 6px; padding: 0;
+        height: 45px; width: 100%;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
+        font-size: 0.8em; font-weight: 600;
+        position: relative;
+    }
+    .minha-reserva:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3); }
+    
+    /* Ocupado (Outros) */
+    .ocupado-outros {
+        background-color: #f1f3f5; border: 1px solid #dee2e6;
+        color: #6c757d; border-radius: 6px; padding: 0;
+        height: 45px; width: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8em; font-weight: 600;
+        cursor: help; /* Cursor de interrogação */
+    }
+    .ocupado-outros:hover { background-color: #e9ecef; }
+    
+    /* Botão de Cancelar (Lixeira) - Só aparece no hover */
+    .btn-cancelar { 
+        position: absolute; top: -5px; right: -5px; 
+        color: white; background: #dc3545; 
+        border: 2px solid white; border-radius: 50%;
+        width: 20px; height: 20px; display: none; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 0.7em; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .minha-reserva:hover .btn-cancelar { display: flex; }
+    .btn-cancelar:hover { background: #b02a37; transform: scale(1.1); }
+</style>
+
+<div class="room-grid-container">
+    <div class="card border-0 mb-4">
+        <div class="card-body bg-light rounded">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="fw-bold text-muted small">SEDE / LOCALIZAÇÃO</label>
+                    <select name="location" class="form-select" onchange="this.form.submit()">
+                        {% for id, name in locations %}
+                            <option value="{{ id }}" {{ selected_loc == id ? 'selected' : '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold text-muted small">DATA</label>
+                    <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100"><i class="ti ti-refresh"></i> Atualizar</button>
+                </div>
             </form>
         </div>
     </div>
 
-    {# A Grade de Horários #}
-    <div class="table-responsive card p-2">
-        <table class="table table-bordered table-hover room-grid">
-            <thead>
-                <tr>
-                    <th class="room-col">Sala / Horário</th>
-                    {% for slot in slots %}
-                        <th class="text-center slot-header">
-                            {{ slot.name }}<br>
-                            <small class="text-muted">{{ slot.start_time|slice(0,5) }} - {{ slot.end_time|slice(0,5) }}</small>
-                        </th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for room in rooms %}
+    {% if rooms is empty %}
+        <div class="alert alert-warning">Nenhuma sala encontrada nesta localização.</div>
+    {% else %}
+        <div class="table-responsive rounded">
+            <table class="room-grid">
+                <thead>
                     <tr>
-                        <td class="fw-bold align-middle">
-                            <i class="ti ti-building"></i> {{ room.name }}
-                            <div class="small text-muted">Cap: {{ room.capacity }} pessoas</div>
-                        </td>
-
+                        <th class="room-col" style="z-index: 20;">Salas</th>
                         {% for slot in slots %}
-                            {# Verifica se existe reserva neste cruzamento (Sala x Slot) #}
-                            {% set booking = bookings_map[room.id][slot.id] ?? null %}
-                            
-                            <td class="text-center align-middle p-1">
-                                {% if booking %}
-                                    {# BLOCO OCUPADO #}
-                                    <div class="booking-slot occupied {% if booking.users_id == user_id %}my-booking{% endif %}">
-                                        <div class="fw-bold small">Reservado</div>
-                                        <div class="xsmall text-truncate" title="{{ booking.username }}">
-                                            {{ booking.username }}
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    {# BLOCO LIVRE #}
-                                    <button class="btn btn-sm btn-outline-success w-100 btn-book"
-                                            data-room-id="{{ room.id }}"
-                                            data-slot-id="{{ slot.id }}"
-                                            data-room-name="{{ room.name }}"
-                                            data-slot-name="{{ slot.name }}">
-                                        <i class="ti ti-plus"></i> Reservar
-                                    </button>
-                                {% endif %}
-                            </td>
+                            <th>{{ slot.formatted_start }}</th>
                         {% endfor %}
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                        <tr>
+                            <td class="room-col">
+                                <div class="room-name">{{ room.name }}</div>
+                                <div class="room-capacity"><i class="ti ti-users"></i> {{ room.capacity }}</div>
+                            </td>
+                            {% for slot in slots %}
+                                {% set booking = bookings_map[room.id][slot.id] ?? null %}
+                                {% set is_mine = booking and booking.users_id == current_uid %}
+                                
+                                <td>
+                                    {% if booking %}
+                                        {# TOOLTIP: title contém os detalhes que aparecem no mouseover #}
+                                        {% if is_mine %}
+                                            <div class="minha-reserva" 
+                                                 data-bs-toggle="tooltip" data-bs-html="true"
+                                                 title="<b>{{ booking.name }}</b><br>Reservado por: Você">
+                                                <span><i class="ti ti-check"></i> Minha</span>
+                                                <button class="btn-cancelar btn-delete" 
+                                                        title="Cancelar Reserva" 
+                                                        data-booking-id="{{ booking.id }}"
+                                                        data-is-series="{{ booking.group_id ? '1' : '0' }}">
+                                                    <i class="ti ti-x"></i>
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <div class="ocupado-outros" 
+                                                 data-bs-toggle="tooltip" data-bs-html="true"
+                                                 title="<b>{{ booking.name }}</b><br>Reservado por: {{ booking.username }}">
+                                                <span><i class="ti ti-lock"></i> Reservado</span>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if not is_past_date %}
+                                            <button class="btn-reservar btn-open-modal" 
+                                                    data-room-id="{{ room.id }}" 
+                                                    data-slot-start="{{ slot.start_time }}" 
+                                                    data-slot-end="{{ slot.end_time }}">
+                                                <i class="ti ti-plus"></i>
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 </div>
 
-{# Modal de Confirmação (Invisível por padrão) #}
-<div class="modal fade" id="modalBooking" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Confirmar Reserva</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title"><i class="ti ti-calendar-time"></i> Agendar Sala</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Você deseja reservar a <strong><span id="modalRoomName"></span></strong> para o horário <strong><span id="modalSlotName"></span></strong>?</p>
-                <form id="formBooking">
+                <form id="formReserva">
                     <input type="hidden" name="room_id" id="inputRoomId">
-                    <input type="hidden" name="slot_id" id="inputSlotId">
-                    <input type="hidden" name="date" value="{{ date }}">
-                    <input type="hidden" name="action" value="add_booking">
+                    <input type="hidden" name="date" id="inputDate" value="{{ selected_date }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título do Evento</label>
+                        <input type="text" class="form-control" name="event_name" id="eventTitle" placeholder="Ex: Reunião de Pauta" required>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Início</label>
+                            <select class="form-select" name="start_time" id="selectStart">
+                                {% for slot in slots %}
+                                    <option value="{{ slot.start_time }}">{{ slot.formatted_start }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Fim</label>
+                            <select class="form-select" name="end_time" id="selectEnd">
+                                {% for slot in slots %}
+                                    <option value="{{ slot.end_time }}">{{ slot.formatted_end }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="checkAllDay">
+                        <label class="form-check-label" for="checkAllDay">Dia Todo (08:00 - 18:00)</label>
+                    </div>
+
+                    <div class="card bg-light border-0 mb-3">
+                        <div class="card-body py-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_recurring" id="checkRecur">
+                                <label class="form-check-label fw-bold" for="checkRecur">Repetir Agendamento</label>
+                            </div>
+                            <div id="recurOptions" class="mt-2" style="display:none;">
+                                <div class="small text-muted mb-1">Frequência: Semanal (mesmo dia)</div>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Repetir por</span>
+                                    <input type="number" class="form-control" name="recur_weeks" value="1" min="1" max="12">
+                                    <span class="input-group-text">semanas</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmBooking">Confirmar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmReserva">Confirmar Reserva</button>
             </div>
         </div>
     </div>
 </div>
 
-{# Script JS simples inline para lidar com o Modal #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Configuração do Modal
-    var modalEl = document.getElementById('modalBooking');
-    var modal = new bootstrap.Modal(modalEl);
     
-    // 1. Abrir Modal ao clicar no botão "Reservar"
-    document.querySelectorAll('.btn-book').forEach(btn => {
+    // 1. INICIALIZA TOOLTIPS (BALÃOZINHOS) DO BOOTSTRAP
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    const ajaxUrl = "{{ root_doc }}/plugins/roommanager/ajax/booking.php";
+    const csrfToken = document.querySelector('meta[property="glpi:csrf_token"]')?.getAttribute('content') || 
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    // Setup do Modal
+    let modalReserva;
+    if (typeof bootstrap !== 'undefined') {
+        const modalEl = document.getElementById('modalReserva');
+        modalReserva = new bootstrap.Modal(modalEl);
+    }
+
+    // Abrir Modal
+    document.querySelectorAll('.btn-open-modal').forEach(btn => {
         btn.addEventListener('click', function() {
-            // Preenche o modal com os dados do botão clicado
-            document.getElementById('modalRoomName').textContent = this.dataset.roomName;
-            document.getElementById('modalSlotName').textContent = this.dataset.slotName;
-            
-            // Preenche os inputs ocultos
             document.getElementById('inputRoomId').value = this.dataset.roomId;
-            document.getElementById('inputSlotId').value = this.dataset.slotId;
-            
-            modal.show();
+            const startTime = this.dataset.slotStart; 
+            const endTime = this.dataset.slotEnd;     
+            setSelectValue('selectStart', startTime);
+            setSelectValue('selectEnd', endTime);
+            document.getElementById('eventTitle').value = "";
+            document.getElementById('checkAllDay').checked = false;
+            document.getElementById('checkRecur').checked = false;
+            document.getElementById('recurOptions').style.display = 'none';
+            modalReserva.show();
+            setTimeout(() => document.getElementById('eventTitle').focus(), 500);
         });
     });
 
-    // 2. Ação do Botão Confirmar (AJAX)
-    document.getElementById('btnConfirmBooking').addEventListener('click', function() {
-        const btn = this;
-        const originalText = btn.textContent;
-        
-        // Estado de "Carregando"
-        btn.disabled = true;
-        btn.textContent = "Salvando...";
-
-        // Prepara os dados do formulário
-        const formData = new FormData(document.getElementById('formBooking'));
-        
-        // URL do arquivo PHP que criamos
-        // GLPI_ROOT precisa ser tratado se estiver em subpasta, mas relativo geralmente funciona:
-        const url = "../plugins/roommanager/ajax/booking.php"; 
-
-        fetch(url, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Sucesso: Recarrega a página para atualizar a grade
-                window.location.reload(); 
-            } else {
-                // Erro de lógica (ex: já ocupado)
-                alert(data.message);
-                btn.disabled = false;
-                btn.textContent = originalText;
+    function setSelectValue(id, value) {
+        const sel = document.getElementById(id);
+        if(!value) return;
+        let found = false;
+        for(let i=0; i<sel.options.length; i++) {
+            if(sel.options[i].value.substring(0,5) == value.substring(0,5)) {
+                sel.selectedIndex = i;
+                found = true;
+                break;
             }
+        }
+        if(!found) sel.selectedIndex = 0;
+    }
+
+    // Checkboxes Lógica
+    document.getElementById('checkAllDay').addEventListener('change', function() {
+        const startSel = document.getElementById('selectStart');
+        const endSel = document.getElementById('selectEnd');
+        if(this.checked) {
+            startSel.selectedIndex = 0; 
+            endSel.selectedIndex = endSel.options.length - 1; 
+            startSel.disabled = true;
+            endSel.disabled = true;
+        } else {
+            startSel.disabled = false;
+            endSel.disabled = false;
+        }
+    });
+
+    document.getElementById('checkRecur').addEventListener('change', function() {
+        document.getElementById('recurOptions').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Confirmar Reserva
+    document.getElementById('btnConfirmReserva').addEventListener('click', function() {
+        const title = document.getElementById('eventTitle').value;
+        if (!title.trim()) { alert("Digite um título."); return; }
+
+        if (!document.getElementById('checkAllDay').checked) {
+            const start = document.getElementById('selectStart').value;
+            const end = document.getElementById('selectEnd').value;
+            if (start >= end) { alert("A hora final deve ser maior que a inicial."); return; }
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = "Processando...";
+
+        const formData = new FormData(document.getElementById('formReserva'));
+        formData.append('action', 'add_range'); 
+        if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
+
+        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (csrfToken) headers['X-Glpi-Csrf-Token'] = csrfToken;
+
+        fetch(ajaxUrl, { method: 'POST', body: formData, headers: headers })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) window.location.reload();
+            else { alert(data.message); btn.disabled = false; btn.innerHTML = "Confirmar Reserva"; }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("Erro de comunicação com o servidor.");
-            btn.disabled = false;
-            btn.textContent = originalText;
+        .catch(err => { alert("Erro ao processar."); });
+    });
+
+    // Cancelar
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Evita clicar na div e fazer algo indesejado
+            const isSeries = this.dataset.isSeries === "1";
+            let msg = "Cancelar esta reserva?";
+            if (isSeries) msg = "Esta reserva é recorrente.\n[OK] = Cancelar TODAS.\n[Cancelar] = Desistir.";
+            
+            if(!confirm(msg)) return;
+            
+            const formData = new FormData();
+            formData.append('action', 'delete');
+            formData.append('booking_id', this.dataset.bookingId);
+            if (isSeries) formData.append('delete_series', '1'); 
+            
+            if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
+            const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+            if (csrfToken) headers['X-Glpi-Csrf-Token'] = csrfToken;
+
+            fetch(ajaxUrl, { method: 'POST', body: formData, headers: headers })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) window.location.reload();
+                else alert(data.message);
+            });
         });
     });
 });

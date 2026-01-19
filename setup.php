@@ -1,9 +1,9 @@
 <?php
-/**
- * plugins/roommanager/setup.php
- */
 
-define('PLUGIN_ROOMMANAGER_VERSION', '1.0.1');
+// IMPORTANTE: Namespace para GLPI 11
+use GlpiPlugin\Roommanager\Booking;
+
+define('PLUGIN_ROOMMANAGER_VERSION', '1.1.0');
 
 function plugin_init_roommanager() {
    global $PLUGIN_HOOKS;
@@ -11,15 +11,12 @@ function plugin_init_roommanager() {
    $PLUGIN_HOOKS['csrf_compliant']['roommanager'] = true;
 
    if (Session::getLoginUserID()) {
-      // APENAS MENU FERRAMENTAS (Para Admins/Técnicos)
-      // Removemos o 'helpdesk' para não gerar o item vazio na barra do FormCreator
-      $PLUGIN_HOOKS['menu_toadd']['roommanager'] = ['tools' => 'PluginRoommanagerBooking'];
+      // Aponta para a classe com Namespace
+      $PLUGIN_HOOKS['menu_toadd']['roommanager'] = ['tools' => Booking::class];
    }
-
-   // Mantemos o registro da classe
-   Plugin::registerClass('PluginRoommanagerBooking', [
-      'addtab_on' => [] 
-   ]);
+   
+   // Registra a classe
+   Plugin::registerClass(Booking::class);
 }
 
 function plugin_version_roommanager() {
@@ -28,7 +25,11 @@ function plugin_version_roommanager() {
       'version'        => PLUGIN_ROOMMANAGER_VERSION,
       'author'         => 'Grupo SCC',
       'license'        => 'GPLv2+',
-      'requirements'   => ['glpi' => ['min' => '10.0.0']]
+      'requirements'   => [
+         'glpi' => [
+            'min' => '11.0.0'
+         ]
+      ]
    ];
 }
 
