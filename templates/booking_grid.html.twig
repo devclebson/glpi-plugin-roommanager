@@ -260,6 +260,35 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalCancelar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="ti ti-alert-triangle"></i> Cancelar Reserva</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">O que você deseja fazer com esta reserva?</p>
+                <small class="text-muted" id="txtDetalheCancelamento">Este item faz parte de uma série (dia todo ou repetição).</small>
+            </div>
+            <div class="modal-footer flex-column align-items-stretch">
+                <button type="button" class="btn btn-danger w-100 mb-2" id="btnDeleteSeries">
+                    <i class="ti ti-trash"></i> Cancelar -<b>Toda a Série</b>
+                    <div style="font-size: 0.7em; opacity: 0.8;">(Remove o dia todo ou todas as repetições)</div>
+                </button>
+
+                <button type="button" class="btn btn-outline-secondary w-100" id="btnDeleteSingle">
+                    <i class="ti ti-trash"></i> Cancelar -<b> Apenas Este Horário</b>
+                   
+                </button>
+                
+                <button type="button" class="btn btn-link text-muted mt-2" data-bs-dismiss="modal">Voltar / Não fazer nada</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -273,27 +302,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[property="glpi:csrf_token"]')?.getAttribute('content') || 
                       document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    let modalReserva;
+    // --- CONFIGURAÇÃO DOS MODAIS ---
+    let modalReserva, modalCancelar;
     if (typeof bootstrap !== 'undefined') {
-        const modalEl = document.getElementById('modalReserva');
-        modalReserva = new bootstrap.Modal(modalEl);
+        modalReserva = new bootstrap.Modal(document.getElementById('modalReserva'));
+        modalCancelar = new bootstrap.Modal(document.getElementById('modalCancelar'));
     }
 
-    // Função para limpar erros e resetar visual
+    // Variáveis para guardar o estado do cancelamento
+    let currentBookingId = null;
+    let currentIsSeries = false;
+
+    // --- FUNÇÕES VISUAIS ---
+    function mostrarErro(msg) {
+        document.getElementById('txtErroModal').innerText = msg;
+        document.getElementById('msgErroModal').style.display = 'block';
+    }
+    
     function limparErro() {
         document.getElementById('msgErroModal').style.display = 'none';
         document.getElementById('txtErroModal').innerText = '';
     }
 
-    function mostrarErro(msg) {
-        document.getElementById('txtErroModal').innerText = msg;
-        document.getElementById('msgErroModal').style.display = 'block';
-    }
-
-    // --- ABERTURA DO MODAL ---
+    // --- LÓGICA DE ABERTURA DO MODAL DE RESERVA (Igual ao anterior) ---
     document.querySelectorAll('.btn-open-modal').forEach(btn => {
         btn.addEventListener('click', function() {
-            limparErro(); // Limpa erros antigos
+            limparErro();
             document.getElementById('inputRoomId').value = this.dataset.roomId;
             
             const isBusy = this.dataset.roomBusy === "1";
@@ -301,11 +335,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const labelAllDay = document.getElementById('labelAllDay');
             const warningDiv  = document.getElementById('allDayWarning');
 
-            // Reset do checkbox Dia Todo
             checkAllDay.checked = false; 
-            checkAllDay.disabled = isBusy; // Bloqueia se tiver ocupado
+            checkAllDay.disabled = isBusy; 
             
-            // Atualiza visual do bloqueio
             if (isBusy) {
                 labelAllDay.classList.add('text-muted');
                 warningDiv.style.display = 'block';
@@ -313,16 +345,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 labelAllDay.classList.remove('text-muted');
                 warningDiv.style.display = 'none';
             }
-            // Força atualização dos selects
             checkAllDay.dispatchEvent(new Event('change'));
 
-            // Preenche horários
             const startTime = this.dataset.slotStart; 
             const endTime = this.dataset.slotEnd;      
             setSelectValue('selectStart', startTime);
             setSelectValue('selectEnd', endTime);
             
-            // Limpa campos
             document.getElementById('eventTitle').value = "";
             document.getElementById('checkRecur').checked = false;
             document.getElementById('recurOptions').style.display = 'none';
@@ -335,29 +364,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function setSelectValue(id, value) {
         const sel = document.getElementById(id);
         if(!value) return;
-        let found = false;
         for(let i=0; i<sel.options.length; i++) {
             if(sel.options[i].value.substring(0,5) == value.substring(0,5)) {
                 sel.selectedIndex = i;
-                found = true;
-                break;
+                return;
             }
         }
-        if(!found) sel.selectedIndex = 0;
+        sel.selectedIndex = 0;
     }
 
-    // Lógica do Checkbox "Dia Todo"
     document.getElementById('checkAllDay').addEventListener('change', function() {
         const startSel = document.getElementById('selectStart');
         const endSel = document.getElementById('selectEnd');
+        startSel.disabled = this.checked;
+        endSel.disabled = this.checked;
         if(this.checked) {
             startSel.selectedIndex = 0; 
             endSel.selectedIndex = endSel.options.length - 1; 
-            startSel.disabled = true;
-            endSel.disabled = true;
-        } else {
-            startSel.disabled = false;
-            endSel.disabled = false;
         }
     });
 
@@ -365,13 +388,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('recurOptions').style.display = this.checked ? 'block' : 'none';
     });
 
-    // --- CONFIRMAR RESERVA (CORRIGIDO) ---
+    // --- CONFIRMAR RESERVA ---
     document.getElementById('btnConfirmReserva').addEventListener('click', function() {
         limparErro();
         const title = document.getElementById('eventTitle').value;
-        if (!title.trim()) { mostrarErro("Digite um título para o evento."); return; }
+        if (!title.trim()) { mostrarErro("Digite um título."); return; }
 
-        // Verificação simples de horário (só se não for dia todo)
         const startSel = document.getElementById('selectStart');
         const endSel = document.getElementById('selectEnd');
         
@@ -383,71 +405,95 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = true;
         btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Processando...';
 
-        // TRUQUE DO MESTRE: Reativar campos disabled para o FormData pegar os valores
         const wasDisabled = startSel.disabled;
-        if(wasDisabled) {
-            startSel.disabled = false;
-            endSel.disabled = false;
-        }
+        if(wasDisabled) { startSel.disabled = false; endSel.disabled = false; }
 
         const formData = new FormData(document.getElementById('formReserva'));
         
-        // Bloqueia de novo imediatamente para o usuário não perceber
-        if(wasDisabled) {
-            startSel.disabled = true;
-            endSel.disabled = true;
-        }
+        if(wasDisabled) { startSel.disabled = true; endSel.disabled = true; }
 
         formData.append('action', 'add_range'); 
-        if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
+        enviarAjax(formData, function(data) {
+            if (data.success) window.location.reload();
+            else { 
+                mostrarErro(data.message);
+                btn.disabled = false; 
+                btn.innerHTML = "Confirmar Reserva"; 
+            }
+        });
+    });
 
+    // --- NOVA LÓGICA DE CANCELAMENTO ---
+    
+    // 1. Clique no ícone de lixeira
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); 
+            currentBookingId = this.dataset.bookingId;
+            currentIsSeries = this.dataset.isSeries === "1";
+
+            const btnSeries = document.getElementById('btnDeleteSeries');
+            const txtDetalhe = document.getElementById('txtDetalheCancelamento');
+
+            // Se for série (Dia todo ou recorrente), mostra o botão vermelho grande
+            if (currentIsSeries) {
+                btnSeries.style.display = 'block';
+                txtDetalhe.style.display = 'block';
+            } else {
+                // Se for reserva única, esconde a opção de apagar série
+                btnSeries.style.display = 'none';
+                txtDetalhe.style.display = 'none';
+            }
+
+            modalCancelar.show();
+        });
+    });
+
+    // 2. Botão "Apagar Toda a Série"
+    document.getElementById('btnDeleteSeries').addEventListener('click', function() {
+        executarCancelamento(currentBookingId, true);
+    });
+
+    // 3. Botão "Apagar Apenas Este"
+    document.getElementById('btnDeleteSingle').addEventListener('click', function() {
+        executarCancelamento(currentBookingId, false);
+    });
+
+    // Função central de AJAX para cancelamento
+    function executarCancelamento(id, deleteSeries) {
+        const formData = new FormData();
+        formData.append('action', 'delete');
+        formData.append('booking_id', id);
+        if (deleteSeries) formData.append('delete_series', '1');
+        
+        // Feedback visual nos botões
+        const btnId = deleteSeries ? 'btnDeleteSeries' : 'btnDeleteSingle';
+        const btn = document.getElementById(btnId);
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Processando...';
+
+        enviarAjax(formData, function(data) {
+            if(data.success) window.location.reload();
+            else {
+                alert(data.message); // Aqui pode usar alert simples ou criar area de erro no modal
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
+
+    // Helper Ajax genérico
+    function enviarAjax(formData, callback) {
+        if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
         const headers = { 'X-Requested-With': 'XMLHttpRequest' };
         if (csrfToken) headers['X-Glpi-Csrf-Token'] = csrfToken;
 
         fetch(ajaxUrl, { method: 'POST', body: formData, headers: headers })
         .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
-            } else { 
-                mostrarErro(data.message); // Mostra erro DENTRO do modal
-                btn.disabled = false; 
-                btn.innerHTML = "Confirmar Reserva"; 
-            }
-        })
-        .catch(err => { 
-            mostrarErro("Erro de conexão ao tentar reservar."); 
-            btn.disabled = false; 
-            btn.innerHTML = "Confirmar Reserva";
-        });
-    });
-
-    // Botão Deletar
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation(); 
-            const isSeries = this.dataset.isSeries === "1";
-            let msg = "Cancelar esta reserva?";
-            if (isSeries) msg = "Esta reserva é recorrente.\n[OK] = Cancelar TODAS.\n[Cancelar] = Desistir.";
-            
-            if(!confirm(msg)) return;
-            
-            const formData = new FormData();
-            formData.append('action', 'delete');
-            formData.append('booking_id', this.dataset.bookingId);
-            if (isSeries) formData.append('delete_series', '1'); 
-            
-            if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
-            const headers = { 'X-Requested-With': 'XMLHttpRequest' };
-            if (csrfToken) headers['X-Glpi-Csrf-Token'] = csrfToken;
-
-            fetch(ajaxUrl, { method: 'POST', body: formData, headers: headers })
-            .then(r => r.json())
-            .then(data => {
-                if(data.success) window.location.reload();
-                else alert(data.message);
-            });
-        });
-    });
+        .then(callback)
+        .catch(err => { alert("Erro de conexão."); });
+    }
 });
+</script>
 </script>
