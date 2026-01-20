@@ -20,6 +20,11 @@ class Booking extends CommonGLPI {
    static function getIcon() {
       return "ti ti-calendar-time";
    }
+   
+   // Adicionei a verificação de permissão que usamos antes
+   static function canView(): bool {
+      return Session::getLoginUserID() ? true : false;
+   }
 
    static function getMenuContent() {
       $menu = [];
@@ -29,18 +34,14 @@ class Booking extends CommonGLPI {
       return $menu;
    }
 
-   /**
-    * Função Principal: Busca dados e Renderiza o Template Twig
-    */
    public function displayGrid() {
       global $DB, $CFG_GLPI;
 
-      // 1. Captura filtros da URL ou usa padrão
       $selected_date = $_GET['date'] ?? date('Y-m-d');
       $selected_loc  = isset($_GET['location']) ? (int)$_GET['location'] : 0;
       $my_uid        = Session::getLoginUserID();
 
-      // 2. Busca Locais (Filtrando por "Grupo SCC")
+      // 1. Busca Locais
       $locations = [];
       $iterator = $DB->request(['FROM' => 'glpi_locations', 'ORDER' => 'completename']);
       foreach ($iterator as $loc) {
@@ -49,7 +50,6 @@ class Booking extends CommonGLPI {
          }
       }
 
-      // Define local padrão se não escolhido (Tenta Florianópolis)
       if ($selected_loc === 0 && count($locations) > 0) {
          foreach($locations as $id => $name) {
             if (stripos($name, 'Florianópolis') !== false) {
@@ -60,7 +60,7 @@ class Booking extends CommonGLPI {
          if ($selected_loc === 0) $selected_loc = array_key_first($locations);
       }
 
-      // 3. Busca Salas do local selecionado
+      // 2. Busca Salas
       $rooms = [];
       $where_rooms = ['is_active' => 1, 'is_deleted' => 0];
       if ($selected_loc > 0) {
@@ -69,18 +69,21 @@ class Booking extends CommonGLPI {
       $iter = $DB->request(['FROM' => 'glpi_plugin_roommanager_rooms', 'WHERE' => $where_rooms]);
       foreach ($iter as $item) { $rooms[] = $item; }
 
-      // 4. Busca Horários (Slots)
+      // 3. Busca Slots
       $slots = [];
       $iter = $DB->request(['FROM' => 'glpi_plugin_roommanager_slots', 'ORDER' => 'start_time ASC']);
       foreach ($iter as $item) { 
-          // Formata hora para ficar bonitinho (08:00)
-          $item['formatted_start'] = substr($item['start_time'], 0, 5);
-          $item['formatted_end']   = substr($item['end_time'], 0, 5);
-          $slots[] = $item; 
+         $item['formatted_start'] = substr($item['start_time'], 0, 5);
+         $item['formatted_end']   = substr($item['end_time'], 0, 5);
+         $slots[] = $item; 
       }
 
-      // 5. Busca Reservas Existentes na Data
+      // 4. Busca Reservas
       $bookings_map = [];
+      
+      // -- NOVO: Array para saber se a sala está "suja" (já tem reserva) --
+      $room_has_booking = []; 
+      
       $iter = $DB->request([
          'SELECT' => ['glpi_plugin_roommanager_bookings.*', 'glpi_users.name AS username'],
          'FROM'   => 'glpi_plugin_roommanager_bookings',
@@ -89,24 +92,27 @@ class Booking extends CommonGLPI {
       ]);
       
       foreach ($iter as $b) {
-         $bookings_map[$b['plugin_roommanager_rooms_id']][$b['plugin_roommanager_slots_id']] = $b;
+         $room_id = $b['plugin_roommanager_rooms_id'];
+         $bookings_map[$room_id][$b['plugin_roommanager_slots_id']] = $b;
+         
+         // Marca esta sala como "ocupada parcialmente"
+         $room_has_booking[$room_id] = true;
       }
 
-      // 6. Preparar dados para o Template
+      // 5. Preparar dados para o Template
       $params = [
-         'locations'     => $locations,
-         'selected_loc'  => $selected_loc,
-         'selected_date' => $selected_date,
-         'rooms'         => $rooms,
-         'slots'         => $slots,
-         'bookings_map'  => $bookings_map,
-         'current_uid'   => $my_uid,
-         'root_doc'      => $CFG_GLPI['root_doc'], // Para caminhos de AJAX/CSS
-         'is_past_date'  => ($selected_date < date('Y-m-d'))
+         'locations'      => $locations,
+         'selected_loc'   => $selected_loc,
+         'selected_date'  => $selected_date,
+         'rooms'          => $rooms,
+         'slots'          => $slots,
+         'bookings_map'   => $bookings_map,
+         'room_has_booking' => $room_has_booking, // <-- Passando a nova variável
+         'current_uid'    => $my_uid,
+         'root_doc'       => $CFG_GLPI['root_doc'],
+         'is_past_date'   => ($selected_date < date('Y-m-d'))
       ];
 
-      // 7. RENDERIZA O TEMPLATE TWIG
-      // @roommanager refere-se à pasta plugins/roommanager/templates/
       TemplateRenderer::getInstance()->display('@roommanager/booking_grid.html.twig', $params);
    }
 }
