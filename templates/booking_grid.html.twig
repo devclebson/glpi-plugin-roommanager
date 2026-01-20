@@ -45,7 +45,7 @@
     .room-name { color: var(--scc-blue); font-size: 0.9em; font-weight: bold; white-space: normal; }
     .room-capacity { color: #adb5bd; font-size: 0.75em; margin-top: 2px; }
 
-    /* Botão Livre (+) */
+    /* Botões da Grade */
     .btn-reservar { 
         background-color: var(--scc-free-bg); color: var(--scc-green);        
         border: 1px solid var(--scc-free-border); border-radius: 6px; 
@@ -58,7 +58,6 @@
         transform: translateY(-1px); box-shadow: 0 2px 5px rgba(40, 167, 69, 0.15);
     }
     
-    /* Minha Reserva */
     .minha-reserva { 
         background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
         color: white; border: none; border-radius: 6px; padding: 0;
@@ -70,7 +69,6 @@
     }
     .minha-reserva:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3); }
     
-    /* Ocupado */
     .ocupado-outros {
         background-color: #f1f3f5; border: 1px solid #dee2e6;
         color: #6c757d; border-radius: 6px; padding: 0;
@@ -81,7 +79,6 @@
     }
     .ocupado-outros:hover { background-color: #e9ecef; }
     
-    /* Botão Cancelar */
     .btn-cancelar { 
         position: absolute; top: -5px; right: -5px; 
         color: white; background: #dc3545; 
@@ -96,7 +93,7 @@
 <div class="room-grid-container">
     <div class="card border-0 mb-4">
         <div class="card-body bg-light rounded">
-            <form method="GET" class="row g-3 align-items-end">
+            <form method="GET" class="row g-3 align-items-end" id="formFilter">
                 <div class="col-md-5">
                     <label class="fw-bold text-muted small">SEDE / LOCALIZAÇÃO</label>
                     <select name="location" class="form-select" onchange="this.form.submit()">
@@ -105,12 +102,33 @@
                         {% endfor %}
                     </select>
                 </div>
+                
                 <div class="col-md-4">
                     <label class="fw-bold text-muted small">DATA</label>
-                    <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+                    <div class="input-group">
+                        <button type="button" class="btn btn-outline-secondary" onclick="mudarDia(-1)" title="Dia Anterior">
+                            <i class="ti ti-chevron-left"></i>
+                        </button>
+                        
+                        <input type="date" name="date" id="dateInput" class="form-control text-center fw-bold" 
+                               value="{{ selected_date }}" onchange="this.form.submit()">
+                        
+                        <button type="button" class="btn btn-outline-secondary" onclick="mudarDia(1)" title="Próximo Dia">
+                            <i class="ti ti-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
+
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100"><i class="ti ti-refresh"></i> Atualizar</button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-dark" onclick="irParaHoje()" title="Ir para Hoje">
+                            Hoje
+                        </button>
+                        
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="ti ti-refresh"></i> Atualizar
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -127,7 +145,7 @@
                         {% for slot in slots %}
                             <th>{{ slot.formatted_start }}</th>
                         {% endfor %}
-                        </tr>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for room in rooms %}
@@ -176,7 +194,7 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
-                            </tr>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -228,7 +246,6 @@
                             <input class="form-check-input" type="checkbox" id="checkAllDay">
                             <label class="form-check-label fw-bold" for="checkAllDay" id="labelAllDay">Dia Todo (08:00 - 18:00)</label>
                         </div>
-                        
                         <div id="allDayWarning" class="text-danger small mt-2" style="display:none;">
                             <i class="ti ti-lock"></i> Opção indisponível pois já existem reservas neste dia.
                         </div>
@@ -273,26 +290,44 @@
             </div>
             <div class="modal-footer flex-column align-items-stretch">
                 <button type="button" class="btn btn-danger w-100 mb-2" id="btnDeleteSeries">
-                    <i class="ti ti-trash"></i> Cancelar -<b>Toda a Série</b>
+                    <i class="ti ti-trash"></i> Cancelar <b>Toda a Série</b>
                     <div style="font-size: 0.7em; opacity: 0.8;">(Remove o dia todo ou todas as repetições)</div>
                 </button>
-
                 <button type="button" class="btn btn-outline-secondary w-100" id="btnDeleteSingle">
-                    <i class="ti ti-trash"></i> Cancelar -<b> Apenas Este Horário</b>
-                   
+                    Cancelar <b>Apenas Este Horário</b>
                 </button>
-                
                 <button type="button" class="btn btn-link text-muted mt-2" data-bs-dismiss="modal">Voltar / Não fazer nada</button>
             </div>
         </div>
     </div>
 </div>
 
-
 <script>
+// --- FUNÇÕES DE NAVEGAÇÃO (NOVAS) ---
+function mudarDia(delta) {
+    const input = document.getElementById('dateInput');
+    const currentDate = new Date(input.value + 'T12:00:00'); // T12 evita problemas de fuso
+    currentDate.setDate(currentDate.getDate() + delta);
+    
+    // Formata para YYYY-MM-DD
+    const newDate = currentDate.toISOString().split('T')[0];
+    input.value = newDate;
+    document.getElementById('formFilter').submit();
+}
+
+function irParaHoje() {
+    const input = document.getElementById('dateInput');
+    const today = new Date();
+    // Formata hoje para YYYY-MM-DD
+    // Ajusta o fuso para garantir que pegue o dia local
+    const offset = today.getTimezoneOffset();
+    const localToday = new Date(today.getTime() - (offset*60*1000));
+    input.value = localToday.toISOString().split('T')[0];
+    document.getElementById('formFilter').submit();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Inicializa Tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
@@ -302,18 +337,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[property="glpi:csrf_token"]')?.getAttribute('content') || 
                       document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    // --- CONFIGURAÇÃO DOS MODAIS ---
     let modalReserva, modalCancelar;
     if (typeof bootstrap !== 'undefined') {
         modalReserva = new bootstrap.Modal(document.getElementById('modalReserva'));
         modalCancelar = new bootstrap.Modal(document.getElementById('modalCancelar'));
     }
 
-    // Variáveis para guardar o estado do cancelamento
     let currentBookingId = null;
     let currentIsSeries = false;
 
-    // --- FUNÇÕES VISUAIS ---
     function mostrarErro(msg) {
         document.getElementById('txtErroModal').innerText = msg;
         document.getElementById('msgErroModal').style.display = 'block';
@@ -324,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('txtErroModal').innerText = '';
     }
 
-    // --- LÓGICA DE ABERTURA DO MODAL DE RESERVA (Igual ao anterior) ---
+    // --- ABRIR MODAL ---
     document.querySelectorAll('.btn-open-modal').forEach(btn => {
         btn.addEventListener('click', function() {
             limparErro();
@@ -423,9 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- NOVA LÓGICA DE CANCELAMENTO ---
-    
-    // 1. Clique no ícone de lixeira
+    // --- CANCELAMENTO ---
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.stopPropagation(); 
@@ -435,38 +465,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const btnSeries = document.getElementById('btnDeleteSeries');
             const txtDetalhe = document.getElementById('txtDetalheCancelamento');
 
-            // Se for série (Dia todo ou recorrente), mostra o botão vermelho grande
             if (currentIsSeries) {
                 btnSeries.style.display = 'block';
                 txtDetalhe.style.display = 'block';
             } else {
-                // Se for reserva única, esconde a opção de apagar série
                 btnSeries.style.display = 'none';
                 txtDetalhe.style.display = 'none';
             }
-
             modalCancelar.show();
         });
     });
 
-    // 2. Botão "Apagar Toda a Série"
     document.getElementById('btnDeleteSeries').addEventListener('click', function() {
         executarCancelamento(currentBookingId, true);
     });
 
-    // 3. Botão "Apagar Apenas Este"
     document.getElementById('btnDeleteSingle').addEventListener('click', function() {
         executarCancelamento(currentBookingId, false);
     });
 
-    // Função central de AJAX para cancelamento
     function executarCancelamento(id, deleteSeries) {
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('booking_id', id);
         if (deleteSeries) formData.append('delete_series', '1');
         
-        // Feedback visual nos botões
         const btnId = deleteSeries ? 'btnDeleteSeries' : 'btnDeleteSingle';
         const btn = document.getElementById(btnId);
         const originalText = btn.innerHTML;
@@ -476,14 +499,13 @@ document.addEventListener('DOMContentLoaded', function() {
         enviarAjax(formData, function(data) {
             if(data.success) window.location.reload();
             else {
-                alert(data.message); // Aqui pode usar alert simples ou criar area de erro no modal
+                alert(data.message);
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
         });
     }
 
-    // Helper Ajax genérico
     function enviarAjax(formData, callback) {
         if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
         const headers = { 'X-Requested-With': 'XMLHttpRequest' };
@@ -495,5 +517,4 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(err => { alert("Erro de conexão."); });
     }
 });
-</script>
 </script>

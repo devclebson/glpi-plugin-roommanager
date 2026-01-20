@@ -22,11 +22,17 @@ try {
         $base_date  = $_POST['date'];
         $name       = $_POST['event_name'];
         
+        // 1. VALIDAÇÃO DE SEGURANÇA: Não permitir passado
+        $hoje = date('Y-m-d');
+        if ($base_date < $hoje) {
+            sendError("Não é permitido agendar em datas passadas.");
+        }
+
         // Recorrência
         $is_recurring = isset($_POST['is_recurring']) && $_POST['is_recurring'] == 'on';
         $weeks        = $is_recurring ? (int)$_POST['recur_weeks'] : 0;
         
-        // 1. Identificar quais Slot IDs correspondem ao intervalo
+        // 2. Identificar quais Slot IDs correspondem ao intervalo
         $slot_iterator = $DB->request([
             'FROM' => 'glpi_plugin_roommanager_slots',
             'WHERE' => [
@@ -43,7 +49,7 @@ try {
 
         if (empty($target_slots)) sendError("Nenhum horário válido encontrado neste intervalo.");
 
-        // 2. Calcular as datas
+        // 3. Calcular as datas
         $dates_to_book = [$base_date];
         if ($is_recurring && $weeks > 0) {
             for ($i = 1; $i <= $weeks; $i++) {
@@ -51,8 +57,7 @@ try {
             }
         }
 
-        // 3. Validação de Conflito em Massa (BLINDAGEM DUPLA)
-        // Fazemos uma verificação "atômica" antes de inserir
+        // 4. Validação de Conflito em Massa (BLINDAGEM DUPLA)
         $conflicts = $DB->request([
             'FROM' => 'glpi_plugin_roommanager_bookings',
             'WHERE' => [
@@ -66,7 +71,7 @@ try {
             sendError("Desculpe, conflito detectado! Alguém acabou de reservar um desses horários.");
         }
 
-        // 4. Inserir Tudo
+        // 5. Inserir Tudo
         $group_id = uniqid('rec_'); 
         
         $stmt = $DB->prepare("INSERT INTO glpi_plugin_roommanager_bookings 
@@ -75,8 +80,6 @@ try {
 
         foreach ($dates_to_book as $d) {
             foreach ($target_slots as $slot_id) {
-                // Revalidação final slot a slot (opcional, mas ultra seguro)
-                // Se preferir performance, confie no count() acima.
                 $stmt->bind_param('iiisss', $room_id, $slot_id, $my_uid, $d, $name, $group_id);
                 $stmt->execute();
             }
