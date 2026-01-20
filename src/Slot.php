@@ -4,6 +4,7 @@ namespace GlpiPlugin\Roommanager;
 
 use CommonDBTM;
 use Html;
+use Session;
 
 class Slot extends CommonDBTM {
 
@@ -17,6 +18,50 @@ class Slot extends CommonDBTM {
       return "ti ti-clock";
    }
 
+// --- PERMISSÕES BLINDADAS ---
+   static function canView(): bool { return Session::haveRight('config', UPDATE); }
+   static function canCreate(): bool { return Session::haveRight('config', UPDATE); }
+   static function canUpdate(): bool { return Session::haveRight('config', UPDATE); }
+   static function canDelete(): bool { return Session::haveRight('config', UPDATE); }
+
+   function getRawSearchOptions() {
+      $tab = [];
+
+      $tab[] = [
+         'id'                 => '1',
+         'table'              => $this->getTable(),
+         'field'              => 'name',
+         'name'               => __('Name'),
+         'datatype'           => 'string'
+      ];
+
+      $tab[] = [
+         'id'                 => '2',
+         'table'              => $this->getTable(),
+         'field'              => 'start_time',
+         'name'               => 'Início',
+         'datatype'           => 'time'
+      ];
+
+      $tab[] = [
+         'id'                 => '3',
+         'table'              => $this->getTable(),
+         'field'              => 'end_time',
+         'name'               => 'Fim',
+         'datatype'           => 'time'
+      ];
+      
+      $tab[] = [
+         'id'                 => '4',
+         'table'              => $this->getTable(),
+         'field'              => 'is_active',
+         'name'               => __('Active'),
+         'datatype'           => 'bool'
+      ];
+
+      return $tab;
+   }
+
    function defineTabs($options = []) {
       $ong = [];
       $this->addDefaultFormTab($ong);
@@ -28,7 +73,7 @@ class Slot extends CommonDBTM {
       $this->showFormHeader($options);
 
       echo "<tr class='tab_bg_1'>";
-      echo "<td>Nome (Ex: 1º Aula)</td>";
+      echo "<td>Nome (Ex: 08:00 - 09:00)</td>";
       echo "<td>" . Html::input('name', ['value' => $this->fields['name']]) . "</td>";
       echo "<td>Ativo</td>";
       echo "<td>";
@@ -39,7 +84,6 @@ class Slot extends CommonDBTM {
       echo "<tr class='tab_bg_1'>";
       echo "<td>Início</td>";
       echo "<td>";
-      // Campo de hora simples
       echo Html::input('start_time', ['value' => $this->fields['start_time'], 'type' => 'time']);
       echo "</td>";
       

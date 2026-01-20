@@ -15,17 +15,19 @@ function plugin_init_roommanager() {
       // Adiciona CSS
       $PLUGIN_HOOKS['add_css']['roommanager'] = 'css/styles.css';
 
-      // 1. Menu da Grade (Ferramentas)
+      // 1. Menu para ADMINS (Interface Padrão -> Ferramentas)
       $PLUGIN_HOOKS['menu_toadd']['roommanager'] = ['tools' => Booking::class];
       
-      // 2. Menu de Configuração (Plugins > Room Manager)
-      // Aqui registramos as classes de cadastro
+      // 2. Menu para SELF-SERVICE (Interface Simplificada)  <-- NOVO!
+      // Isso cria um link no topo da página do usuário comum
+      $PLUGIN_HOOKS['helpdesk_menu']['roommanager'] = 'front/booking.php';
+
+      // 3. Menu de Configuração (Plugins)
       $PLUGIN_HOOKS['config_page']['roommanager'] = 'front/room.php';
    }
    
-   // Registra as classes para o GLPI saber que elas existem
    Plugin::registerClass(Booking::class);
-   Plugin::registerClass(Room::class, ['addtabon' => []]); // Adicione 'Entity' no array se quiser aba na entidade
+   Plugin::registerClass(Room::class, ['addtabon' => []]);
    Plugin::registerClass(Slot::class);
 }
 
@@ -37,7 +39,7 @@ function plugin_version_roommanager() {
       'license'        => 'GPLv2+',
       'requirements'   => [
          'glpi' => [
-            'min' => '10.0.0', // Mantive 10 para compatibilidade, mas funciona no 11
+            'min' => '10.0.0',
             'max' => '12.0.0'
          ]
       ]

@@ -8,7 +8,6 @@ use Session;
 
 class Room extends CommonDBTM {
 
-   // Vincula a classe à tabela correta criada no hook.php
    static $rightname = 'plugin_roommanager';
 
    static function getTypeName($nb = 0) {
@@ -19,32 +18,91 @@ class Room extends CommonDBTM {
       return "ti ti-door";
    }
 
-   /**
-    * Define onde o menu vai aparecer
-    */
+   // --- PERMISSÕES ---
+   // Usamos 'config' e UPDATE. Isso garante que só quem tem perfil de ADMIN/SUPER-ADMIN acessa.
+   // O Self-Service vai receber "false" aqui e o menu nem vai aparecer para ele.
+   
+   static function canView(): bool {
+      return Session::haveRight('config', UPDATE);
+   }
+
+   static function canCreate(): bool {
+      return Session::haveRight('config', UPDATE);
+   }
+
+   static function canUpdate(): bool {
+      return Session::haveRight('config', UPDATE);
+   }
+
+   static function canDelete(): bool {
+      return Session::haveRight('config', UPDATE); // ou PURGE
+   }
+   // ------------------
+
+   // Define as colunas que aparecem na LISTA
+   function getRawSearchOptions() {
+      $tab = [];
+
+      $tab[] = [
+         'id'                 => 'common',
+         'name'               => __('Characteristics')
+      ];
+
+      $tab[] = [
+         'id'                 => '1',
+         'table'              => $this->getTable(),
+         'field'              => 'name',
+         'name'               => __('Name'),
+         'datatype'           => 'itemlink',
+         'massiveaction'      => false
+      ];
+
+      $tab[] = [
+         'id'                 => '2',
+         'table'              => $this->getTable(),
+         'field'              => 'capacity',
+         'name'               => 'Capacidade',
+         'datatype'           => 'number'
+      ];
+
+      $tab[] = [
+         'id'                 => '3',
+         'table'              => 'glpi_locations',
+         'field'              => 'completename',
+         'name'               => 'Localização',
+         'datatype'           => 'dropdown'
+      ];
+      
+      $tab[] = [
+         'id'                 => '4',
+         'table'              => $this->getTable(),
+         'field'              => 'is_active',
+         'name'               => __('Active'),
+         'datatype'           => 'bool'
+      ];
+
+      return $tab;
+   }
+
    static function getMenuContent() {
+      // O menu só aparece se o usuário tiver permissão de View
+      if (!static::canView()) {
+         return false;
+      }
       $menu = [];
       $menu['title'] = self::getTypeName(1);
-      $menu['page']  = '/plugins/roommanager/front/room.php'; // Vamos precisar criar esse front rapidinho depois ou usar o padrão form
+      $menu['page']  = '/plugins/roommanager/front/room.php';
       $menu['icon']  = self::getIcon();
       return $menu;
    }
 
-   /**
-    * Cria as abas padrões (Principal, Logs, etc)
-    */
    function defineTabs($options = []) {
       $ong = [];
       $this->addDefaultFormTab($ong);
       return $ong;
    }
 
-   /**
-    * Desenha o Formulário de Cadastro
-    */
    function showForm($ID, $options = []) {
-      global $DB;
-      
       $this->initForm($ID, $options);
       $this->showFormHeader($options);
 
@@ -63,7 +121,6 @@ class Room extends CommonDBTM {
       echo "<tr class='tab_bg_1'>";
       echo "<td>Localização (Sede)</td>";
       echo "<td>";
-      // Dropdown nativo do GLPI para Locations
       \Location::dropdown(['value' => $this->fields['locations_id']]);
       echo "</td>";
       
