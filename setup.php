@@ -4,7 +4,7 @@ use GlpiPlugin\Roommanager\Booking;
 use GlpiPlugin\Roommanager\Room;
 use GlpiPlugin\Roommanager\Slot;
 
-define('PLUGIN_ROOMMANAGER_VERSION', '1.1.1');
+define('PLUGIN_ROOMMANAGER_VERSION', '1.2.0');
 
 function plugin_init_roommanager() {
    global $PLUGIN_HOOKS;

@@ -9,22 +9,10 @@ use Glpi\Application\View\TemplateRenderer;
 
 class Booking extends CommonGLPI {
 
-   static function getTypeName($nb = 0) {
-      return "Reserva de Salas";
-   }
-
-   static function getMenuName() {
-      return "Reserva de Salas";
-   }
-
-   static function getIcon() {
-      return "ti ti-calendar-time";
-   }
-   
-   // Adicionei a verificação de permissão que usamos antes
-   static function canView(): bool {
-      return Session::getLoginUserID() ? true : false;
-   }
+   static function getTypeName($nb = 0) { return "Reserva de Salas"; }
+   static function getMenuName() { return "Reserva de Salas"; }
+   static function getIcon() { return "ti ti-calendar-time"; }
+   static function canView(): bool { return Session::getLoginUserID() ? true : false; }
 
    static function getMenuContent() {
       $menu = [];
@@ -41,7 +29,15 @@ class Booking extends CommonGLPI {
       $selected_loc  = isset($_GET['location']) ? (int)$_GET['location'] : 0;
       $my_uid        = Session::getLoginUserID();
 
-      // 1. Busca Locais
+      // Configuração do Dia (08:00 as 19:00)
+      $day_start_hour = 8;
+      $day_end_hour   = 19;
+      
+      $day_start_min = $day_start_hour * 60; 
+      $day_end_min   = $day_end_hour * 60;
+      $total_day_minutes = $day_end_min - $day_start_min;
+
+      // 1. Locais
       $locations = [];
       $iterator = $DB->request(['FROM' => 'glpi_locations', 'ORDER' => 'completename']);
       foreach ($iterator as $loc) {
@@ -49,40 +45,17 @@ class Booking extends CommonGLPI {
             $locations[$loc['id']] = $loc['completename'];
          }
       }
+      if ($selected_loc === 0 && count($locations) > 0) $selected_loc = array_key_first($locations);
 
-      if ($selected_loc === 0 && count($locations) > 0) {
-         foreach($locations as $id => $name) {
-            if (stripos($name, 'Florianópolis') !== false) {
-               $selected_loc = $id;
-               break;
-            }
-         }
-         if ($selected_loc === 0) $selected_loc = array_key_first($locations);
-      }
-
-      // 2. Busca Salas
+      // 2. Salas
       $rooms = [];
       $where_rooms = ['is_active' => 1, 'is_deleted' => 0];
-      if ($selected_loc > 0) {
-         $where_rooms['locations_id'] = $selected_loc;
-      }
+      if ($selected_loc > 0) $where_rooms['locations_id'] = $selected_loc;
       $iter = $DB->request(['FROM' => 'glpi_plugin_roommanager_rooms', 'WHERE' => $where_rooms]);
       foreach ($iter as $item) { $rooms[] = $item; }
 
-      // 3. Busca Slots
-      $slots = [];
-      $iter = $DB->request(['FROM' => 'glpi_plugin_roommanager_slots', 'ORDER' => 'start_time ASC']);
-      foreach ($iter as $item) { 
-         $item['formatted_start'] = substr($item['start_time'], 0, 5);
-         $item['formatted_end']   = substr($item['end_time'], 0, 5);
-         $slots[] = $item; 
-      }
-
-      // 4. Busca Reservas
+      // 3. Reservas
       $bookings_map = [];
-      
-      // -- NOVO: Array para saber se a sala está "suja" (já tem reserva) --
-      $room_has_booking = []; 
       
       $iter = $DB->request([
          'SELECT' => ['glpi_plugin_roommanager_bookings.*', 'glpi_users.name AS username'],
@@ -93,21 +66,46 @@ class Booking extends CommonGLPI {
       
       foreach ($iter as $b) {
          $room_id = $b['plugin_roommanager_rooms_id'];
-         $bookings_map[$room_id][$b['plugin_roommanager_slots_id']] = $b;
          
-         // Marca esta sala como "ocupada parcialmente"
-         $room_has_booking[$room_id] = true;
+         $b_start_parts = explode(':', $b['start_time']);
+         $b_end_parts   = explode(':', $b['end_time']);
+         
+         $b_start_min = ($b_start_parts[0] * 60) + $b_start_parts[1];
+         $b_end_min   = ($b_end_parts[0] * 60) + $b_end_parts[1];
+
+         if ($b_start_min < $day_start_min) $b_start_min = $day_start_min;
+         if ($b_end_min > $day_end_min) $b_end_min = $day_end_min;
+
+         $duration = $b_end_min - $b_start_min;
+         $offset   = $b_start_min - $day_start_min;
+
+         // CÁLCULO VERTICAL: Top e Height em %
+         $top_percent    = ($offset / $total_day_minutes) * 100;
+         $height_percent = ($duration / $total_day_minutes) * 100;
+
+         $b['css_top']    = $top_percent;
+         $b['css_height'] = $height_percent;
+         $b['format_time'] = substr($b['start_time'], 0, 5) . ' - ' . substr($b['end_time'], 0, 5);
+
+         $bookings_map[$room_id][] = $b;
       }
 
-      // 5. Preparar dados para o Template
+      // 4. Selects de Horário (15 min)
+      $time_options = [];
+      for ($i = $day_start_min; $i <= $day_end_min; $i += 15) { 
+          $h = floor($i / 60); $m = $i % 60;
+          $time_options[] = sprintf('%02d:%02d', $h, $m);
+      }
+
       $params = [
          'locations'      => $locations,
          'selected_loc'   => $selected_loc,
          'selected_date'  => $selected_date,
          'rooms'          => $rooms,
-         'slots'          => $slots,
          'bookings_map'   => $bookings_map,
-         'room_has_booking' => $room_has_booking, // <-- Passando a nova variável
+         'time_options'   => $time_options,
+         'day_start'      => $day_start_hour,
+         'day_end'        => $day_end_hour,
          'current_uid'    => $my_uid,
          'root_doc'       => $CFG_GLPI['root_doc'],
          'is_past_date'   => ($selected_date < date('Y-m-d'))

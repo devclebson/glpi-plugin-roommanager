@@ -4,215 +4,296 @@
     :root { 
         --scc-blue: #003366;
         --scc-green: #28a745;
-        --scc-light-bg: #f8f9fa;
-        --scc-free-bg: #e6f9ec;
-        --scc-free-border: #a8e4bc;
+        --grid-border: #dee2e6;
+        --slot-height: 60px; /* Altura de cada hora */
+        --col-width: 220px;  /* Largura Desktop */
     }
 
-    .room-grid-container { margin: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .room-grid-container { margin: 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     
-    .table-responsive { 
-        overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border-radius: 12px; background: white; border: 1px solid #e9ecef;
-    }
-    .room-grid { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-    
-    .room-grid th, .room-grid td { 
-        padding: 6px; text-align: center; vertical-align: middle; 
-        border-bottom: 1px solid #f1f3f5; border-right: 1px dashed #f1f3f5;
-        width: 80px; min-width: 80px; max-width: 80px; box-sizing: border-box;
+    /* --- ESTRUTURA DO GRID (SCROLL AVANÇADO) --- */
+    .vertical-wrapper {
+        background: white; border-radius: 8px; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        border: 1px solid var(--grid-border); 
+        display: flex; flex-direction: column;
+        height: 75vh; /* Ocupa 75% da altura da tela */
+        min-height: 600px;
+        overflow: hidden; 
     }
 
-    .room-grid th { 
-        background-color: white; color: #868e96; font-weight: 600; 
-        text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;
-        border-bottom: 2px solid #e9ecef; height: 50px;
+    .grid-scroller {
+        overflow: auto; /* Scroll X e Y conforme necessário */
+        display: flex; flex-direction: column;
+        flex-grow: 1; position: relative;
+        scroll-behavior: smooth;
     }
-    
-    .room-col { 
-        position: sticky; left: 0; background: #fff; z-index: 10; 
-        width: 200px !important; min-width: 200px !important; max-width: 200px !important;
-        text-align: left !important; padding-left: 20px !important;
-        border-right: 2px solid #e9ecef !important; box-shadow: 2px 0 5px rgba(0,0,0,0.02);
-    }
-    .room-name { color: var(--scc-blue); font-size: 0.9em; font-weight: bold; white-space: normal; }
-    .room-capacity { color: #adb5bd; font-size: 0.75em; margin-top: 2px; }
 
-    .btn-reservar { 
-        background-color: var(--scc-free-bg); color: var(--scc-green);        
-        border: 1px solid var(--scc-free-border); border-radius: 6px; 
-        width: 100%; height: 45px; display: flex; align-items: center; justify-content: center; font-weight: bold;
-        cursor: pointer; transition: all 0.2s ease;
-    }
-    .btn-reservar:hover { 
-        background-color: #d1e7dd; border-color: var(--scc-green); transform: translateY(-1px);
-    }
-    
-    .minha-reserva { 
-        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-        color: white; border: none; border-radius: 6px; padding: 0; height: 45px; width: 100%;
-        display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2); font-size: 0.8em; font-weight: 600; position: relative;
-    }
-    .minha-reserva:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3); }
-    
-    .ocupado-outros {
-        background-color: #f1f3f5; border: 1px solid #dee2e6; color: #6c757d; border-radius: 6px; padding: 0;
-        height: 45px; width: 100%; display: flex; align-items: center; justify-content: center;
-        font-size: 0.8em; font-weight: 600; cursor: help;
+    /* --- CABEÇALHOS (STICKY) --- */
+    .grid-header-row {
+        display: flex; 
+        border-bottom: 2px solid var(--grid-border); 
+        background: #f8f9fa;
+        position: sticky; top: 0; z-index: 30;
+        min-width: max-content;
     }
     
-    .btn-cancelar { 
-        position: absolute; top: -5px; right: -5px; color: white; background: #dc3545; 
-        border: 2px solid white; border-radius: 50%; width: 20px; height: 20px; display: none; align-items: center; justify-content: center;
-        cursor: pointer; font-size: 0.7em; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    .corner-header {
+        width: 70px; border-right: 1px solid var(--grid-border); background: #f8f9fa;
+        flex-shrink: 0; position: sticky; left: 0; z-index: 40;
+        border-bottom: 2px solid var(--grid-border);
     }
-    .minha-reserva:hover .btn-cancelar { display: flex; }
-    .btn-cancelar:hover { background: #b02a37; transform: scale(1.1); }
+
+    .room-header-col {
+        flex: 0 0 var(--col-width); width: var(--col-width);
+        text-align: center; padding: 12px 5px;
+        border-right: 1px solid var(--grid-border); 
+        color: var(--scc-blue); background: #f8f9fa;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .room-title { font-weight: bold; font-size: 0.95em; line-height: 1.2; }
+    .room-sub { font-size: 0.75em; color: #6c757d; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+    /* --- CORPO --- */
+    .grid-body { display: flex; position: relative; min-width: max-content; }
+
+    /* Coluna de Horas (Esquerda) */
+    .time-labels-col {
+        width: 70px; flex-shrink: 0; background: white; border-right: 1px solid var(--grid-border);
+        position: sticky; left: 0; z-index: 20;
+    }
+    .time-label {
+        height: var(--slot-height); 
+        border-bottom: 1px solid #f1f3f5; 
+        font-size: 0.75em; color: #6c757d; font-weight: 600;
+        display: flex; justify-content: center;
+        /* Alinha o texto no topo da linha */
+        align-items: flex-start; padding-top: 5px;
+    }
+
+    /* Colunas de Sala */
+    .room-body-col {
+        flex: 0 0 var(--col-width); width: var(--col-width);
+        position: relative; 
+        border-right: 1px solid var(--grid-border);
+        /* Linhas de fundo */
+        background-image: linear-gradient(to bottom, #f1f3f5 1px, transparent 1px);
+        background-size: 100% var(--slot-height);
+    }
+
+    /* Camada de Clique (+) */
+    .click-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+        display: flex; flex-direction: column;
+    }
+    .hour-slot {
+        flex: 1; cursor: pointer; border-bottom: 1px dashed transparent;
+    }
+    .hour-slot:hover { background: rgba(40, 167, 69, 0.05); }
+    .hour-slot:hover::after {
+        content: '+ Agendar'; position: absolute; left: 50%; color: var(--scc-green); 
+        transform: translateX(-50%); font-size: 0.8em; font-weight: bold; margin-top: 20px;
+        background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--scc-green);
+    }
+
+    /* --- EVENTOS (VISIBILIDADE MELHORADA) --- */
+    .v-event {
+        position: absolute; left: 4px; right: 4px; 
+        z-index: 10; border-radius: 4px;
+        padding: 4px 8px; color: white;
+        overflow: hidden; cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15); 
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: transform 0.15s, z-index 0.1s, box-shadow 0.15s;
+        
+        /* Flex para organizar texto */
+        display: flex; flex-direction: column; justify-content: flex-start;
+    }
+    .v-event:hover { 
+        transform: scale(1.02); z-index: 50; 
+        box-shadow: 0 6px 12px rgba(0,0,0,0.25); 
+    }
+    
+    .evt-mine { 
+        background: #0d6efd; /* Azul Sólido para melhor leitura */
+        border-left: 4px solid #003366; 
+    }
+    .evt-other { 
+        background: #e9ecef; color: #495057; 
+        border: 1px solid #dee2e6; border-left: 4px solid #adb5bd; 
+    }
+
+    /* Tipografia do Evento */
+    .evt-time { 
+        font-size: 0.85em; font-weight: bold; margin-bottom: 2px; display: block;
+        opacity: 0.9;
+    }
+    .evt-title { 
+        font-size: 0.95em; font-weight: 600; line-height: 1.1; 
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .evt-user { font-size: 0.75em; opacity: 0.8; margin-top: 2px; }
+
+    /* --- MOBILE RESPONSIVE --- */
+    @media (max-width: 768px) {
+        :root { --col-width: 160px; } /* Colunas mais estreitas */
+        .room-title { font-size: 0.8em; }
+        .grid-header-row { top: 0; } /* Mantém sticky */
+        
+        /* Ajuste do botão flutuante para mobile se quisesse, mas vamos usar o toolbar */
+    }
+
 </style>
 
 <div class="room-grid-container">
-    <div class="card border-0 mb-4">
-        <div class="card-body bg-light rounded">
-            <form method="GET" class="row g-3 align-items-end" id="formFilter">
-                <div class="col-md-5">
-                    <label class="fw-bold text-muted small">SEDE / LOCALIZAÇÃO</label>
-                    <select name="location" class="form-select" onchange="this.form.submit()">
+    
+    <div class="card border-0 mb-3 shadow-sm">
+        <div class="card-body bg-light rounded py-3">
+            <form method="GET" class="row g-2 align-items-center" id="formFilter">
+                
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <button type="button" class="btn btn-success w-100 fw-bold shadow-sm" onclick="abrirModalGenerico()">
+                        <i class="ti ti-plus"></i> Novo Agendamento
+                    </button>
+                </div>
+
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <button type="button" class="btn btn-white border" onclick="mudarDia(-1)"><i class="ti ti-chevron-left"></i></button>
+                        <input type="date" name="date" id="dateInput" class="form-control text-center fw-bold bg-white" value="{{ selected_date }}" onchange="this.form.submit()">
+                        <button type="button" class="btn btn-white border" onclick="mudarDia(1)"><i class="ti ti-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <select name="location" class="form-select border-0 bg-white shadow-sm" onchange="this.form.submit()">
                         {% for id, name in locations %}
                             <option value="{{ id }}" {{ selected_loc == id ? 'selected' : '' }}>{{ name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="col-md-4">
-                    <label class="fw-bold text-muted small">DATA</label>
-                    <div class="input-group">
-                        <button type="button" class="btn btn-outline-secondary" onclick="mudarDia(-1)" title="Dia Anterior"><i class="ti ti-chevron-left"></i></button>
-                        <input type="date" name="date" id="dateInput" class="form-control text-center fw-bold" value="{{ selected_date }}" onchange="this.form.submit()">
-                        <button type="button" class="btn btn-outline-secondary" onclick="mudarDia(1)" title="Próximo Dia"><i class="ti ti-chevron-right"></i></button>
-                    </div>
-                </div>
 
-                <div class="col-md-3">
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-info text-white" onclick="abrirMinhasReservas()" title="Ver minha lista de reservas futuras">
-                            <i class="ti ti-list"></i>
-                        </button>
-                        
-                        <button type="button" class="btn btn-outline-dark" onclick="irParaHoje()" title="Ir para Hoje">Hoje</button>
-                        <button type="submit" class="btn btn-primary flex-grow-1"><i class="ti ti-refresh"></i> Atualizar</button>
-                    </div>
+                <div class="col-md-3 text-end d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-primary shadow-sm" onclick="abrirMinhasReservas()" title="Minhas Reservas">
+                        <i class="ti ti-list-check"></i> Minhas
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="irParaHoje()">Hoje</button>
+                    <button type="submit" class="btn btn-light border"><i class="ti ti-refresh"></i></button>
                 </div>
             </form>
         </div>
     </div>
 
-    {% if rooms is empty %}
-        <div class="alert alert-warning">Nenhuma sala encontrada nesta localização.</div>
-    {% else %}
-        <div class="table-responsive rounded">
-            <table class="room-grid">
-                <thead>
-                    <tr>
-                        <th class="room-col" style="z-index: 20;">Salas</th>
-                        {% for slot in slots %}
-                            <th>{{ slot.formatted_start }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for room in rooms %}
-                        <tr>
-                            <td class="room-col">
-                                <div class="room-name">{{ room.name }}</div>
-                                <div class="room-capacity"><i class="ti ti-users"></i> {{ room.capacity }}</div>
-                            </td>
-                            {% for slot in slots %}
-                                {% set booking = bookings_map[room.id][slot.id] ?? null %}
-                                {% set is_mine = booking and booking.users_id == current_uid %}
-                                <td>
-                                    {% if booking %}
-                                        {% if is_mine %}
-                                            <div class="minha-reserva" data-bs-toggle="tooltip" data-bs-html="true" title="<b>{{ booking.name }}</b><br>Reservado por: Você">
-                                                <span><i class="ti ti-check"></i> Minha</span>
-                                                <button class="btn-cancelar btn-delete" title="Cancelar Reserva" data-booking-id="{{ booking.id }}" data-is-series="{{ booking.group_id ? '1' : '0' }}">
-                                                    <i class="ti ti-x"></i>
-                                                </button>
-                                            </div>
-                                        {% else %}
-                                            <div class="ocupado-outros" data-bs-toggle="tooltip" data-bs-html="true" title="<b>{{ booking.name }}</b><br>Reservado por: {{ booking.username }}">
-                                                <span><i class="ti ti-lock"></i> Reservado</span>
-                                            </div>
-                                        {% endif %}
-                                    {% else %}
-                                        {% if not is_past_date %}
-                                            <button class="btn-reservar btn-open-modal" data-room-id="{{ room.id }}" data-slot-start="{{ slot.start_time }}" data-slot-end="{{ slot.end_time }}" data-room-busy="{{ room_has_booking[room.id] is defined ? '1' : '0' }}"><i class="ti ti-plus"></i></button>
-                                        {% else %}
-                                            <span class="text-muted small">-</span>
-                                        {% endif %}
-                                    {% endif %}
-                                </td>
-                            {% endfor %}
-                        </tr>
+    <div class="vertical-wrapper">
+        <div class="grid-scroller">
+            
+            <div class="grid-header-row">
+                <div class="corner-header"></div>
+                {% for room in rooms %}
+                    <div class="room-header-col">
+                        <div class="room-title">{{ room.name }}</div>
+                        <div class="room-sub"><i class="ti ti-users"></i> {{ room.capacity }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="grid-body">
+                <div class="time-labels-col">
+                    {% for i in day_start..(day_end - 1) %}
+                        <div class="time-label"><span>{{ "%02d:00"|format(i) }}</span></div>
                     {% endfor %}
-                </tbody>
-            </table>
+                    <div class="time-label"><span>{{ "%02d:00"|format(day_end) }}</span></div>
+                    <div style="height: 20px;"></div>
+                </div>
+
+                {% for room in rooms %}
+                    <div class="room-body-col">
+                        <div class="click-layer">
+                            {% if not is_past_date %}
+                                {% for h in day_start..(day_end - 1) %}
+                                    <div class="hour-slot" 
+                                         onclick="abrirModalNovaReserva({{ room.id }}, '{{ "%02d:00"|format(h) }}')"
+                                         title="Clique para agendar às {{ "%02d:00"|format(h) }}"></div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        {% if bookings_map[room.id] is defined %}
+                            {% for b in bookings_map[room.id] %}
+                                {% set is_mine = (b.users_id == current_uid) %}
+                                <div class="v-event {{ is_mine ? 'evt-mine' : 'evt-other' }}"
+                                     style="top: {{ b.css_top }}%; height: {{ b.css_height }}%;"
+                                     {% if is_mine %}
+                                        onclick="abrirCancelamento(event, {{ b.id }}, {{ b.group_id ? 'true' : 'false' }})"
+                                     {% endif %}
+                                     title="{{ b.event_title }}&#013;{{ b.format_time }}"
+                                >
+                                    <span class="evt-time">
+                                        {% if is_mine %}<i class="ti ti-check-circle"></i>{% endif %} 
+                                        {{ b.format_time }}
+                                    </span>
+                                    <span class="evt-title">{{ b.event_title }}</span>
+                                    {% if not is_mine %}<span class="evt-user">{{ b.username }}</span>{% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-    {% endif %}
+    </div>
 </div>
 
-<div class="modal fade" id="modalReserva" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalReserva" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="ti ti-calendar-time"></i> Agendar Sala</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="ti ti-calendar-plus"></i> Agendar Sala</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div id="msgErroModal" class="alert alert-danger p-2 mb-3" style="display:none; font-size: 0.9em;"><i class="ti ti-alert-circle"></i> <span id="txtErroModal"></span></div>
+            <div class="modal-body p-4">
                 <form id="formReserva">
-                    <input type="hidden" name="room_id" id="inputRoomId">
-                    <input type="hidden" name="date" id="inputDate" value="{{ selected_date }}">
+                    <input type="hidden" name="date" value="{{ selected_date }}">
+                    
+                    <div class="mb-3" id="divRoomSelect">
+                        <label class="fw-bold form-label">Sala</label>
+                        <select class="form-select" name="room_id" id="selectRoomId">
+                            {% for room in rooms %}
+                                <option value="{{ room.id }}">{{ room.name }} ({{ room.capacity }} lug.)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Título do Evento</label>
-                        <input type="text" class="form-control" name="event_name" id="eventTitle" placeholder="Ex: Reunião de Pauta" required>
+                        <label class="fw-bold form-label">Título do Evento</label>
+                        <input type="text" class="form-control" name="event_name" id="evtName" required placeholder="Ex: Reunião de Planejamento">
                     </div>
 
-                    <div class="row g-2 mb-3">
+                    <div class="row mb-3">
                         <div class="col-6">
-                            <label class="form-label small text-muted">Início</label>
-                            <select class="form-select" name="start_time" id="selectStart">
-                                {% for slot in slots %} <option value="{{ slot.start_time }}">{{ slot.formatted_start }}</option> {% endfor %}
+                            <label class="small text-muted fw-bold">Início</label>
+                            <select class="form-select" name="start_time" id="selStart">
+                                {% for time in time_options %} <option value="{{ time }}">{{ time }}</option> {% endfor %}
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small text-muted">Fim</label>
-                            <select class="form-select" name="end_time" id="selectEnd">
-                                {% for slot in slots %} <option value="{{ slot.end_time }}">{{ slot.formatted_end }}</option> {% endfor %}
+                            <label class="small text-muted fw-bold">Fim</label>
+                            <select class="form-select" name="end_time" id="selEnd">
+                                {% for time in time_options %} <option value="{{ time }}">{{ time }}</option> {% endfor %}
                             </select>
                         </div>
                     </div>
 
-                    <div class="mb-3 bg-light p-3 rounded border">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="checkAllDay">
-                            <label class="form-check-label fw-bold" for="checkAllDay" id="labelAllDay">Dia Todo (08:00 - 18:00)</label>
-                        </div>
-                        <div id="allDayWarning" class="text-danger small mt-2" style="display:none;"><i class="ti ti-lock"></i> Opção indisponível pois já existem reservas neste dia.</div>
-                    </div>
-
-                    <div class="card bg-light border-0 mb-3">
+                    <div class="card bg-light border-0">
                         <div class="card-body py-2">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="is_recurring" id="checkRecur">
-                                <label class="form-check-label fw-bold" for="checkRecur">Repetir Agendamento</label>
+                                <input class="form-check-input" type="checkbox" name="is_recurring" id="chkRecur">
+                                <label class="form-check-label fw-bold" for="chkRecur">Repetir Semanalmente</label>
                             </div>
-                            <div id="recurOptions" class="mt-2" style="display:none;">
-                                <div class="small text-muted mb-1">Frequência: Semanal (mesmo dia)</div>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">Repetir por</span>
-                                    <input type="number" class="form-control" name="recur_weeks" value="1" min="1" max="12">
+                            <div id="recurBox" style="display:none;" class="mt-3">
+                                 <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Por</span>
+                                    <input type="number" class="form-control" name="recur_weeks" value="1" max="12">
                                     <span class="input-group-text">semanas</span>
                                 </div>
                             </div>
@@ -220,286 +301,212 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmReserva">Confirmar Reserva</button>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary px-4" id="btnSalvar">Confirmar Agendamento</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalCancelar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+<div class="modal fade" id="modalCancelar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="ti ti-alert-triangle"></i> Cancelar Reserva</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fs-6"><i class="ti ti-trash"></i> Cancelar</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p class="mb-1">O que você deseja fazer com esta reserva?</p>
-                <small class="text-muted" id="txtDetalheCancelamento">Este item faz parte de uma série (dia todo ou repetição).</small>
+            <div class="modal-body text-center p-4">
+                <p class="mb-0">Remover este agendamento?</p>
             </div>
-            <div class="modal-footer flex-column align-items-stretch">
-                <button type="button" class="btn btn-danger w-100 mb-2" id="btnDeleteSeries">
-                    <i class="ti ti-trash"></i> Cancelar <b>Toda a Série</b>
-                    <div style="font-size: 0.7em; opacity: 0.8;">(Remove o dia todo ou todas as repetições)</div>
-                </button>
-                <button type="button" class="btn btn-outline-secondary w-100" id="btnDeleteSingle">Cancelar <b>Apenas Este Horário</b></button>
-                <button type="button" class="btn btn-link text-muted mt-2" data-bs-dismiss="modal">Voltar / Não fazer nada</button>
+            <div class="modal-footer flex-column p-2">
+                <button type="button" class="btn btn-danger w-100 mb-2" id="btnDeleteSeries" style="display:none;">Cancelar Série Completa</button>
+                <button type="button" class="btn btn-outline-secondary w-100" id="btnDeleteSingle">Cancelar Apenas Este</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalMinhasReservas" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalMinhasReservas" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="ti ti-list"></i> Minhas Próximas Reservas</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="ti ti-list-check"></i> Meus Agendamentos</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
-                <div id="loadingMyBookings" class="text-center p-4">
-                    <i class="ti ti-loader animate-spin fs-2 text-muted"></i>
-                    <p class="text-muted mt-2">Carregando...</p>
+                <div id="loadingMyBookings" class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Buscando...</p>
                 </div>
-                <table class="table table-striped table-hover mb-0" id="tableMyBookings" style="display:none;">
+                <table class="table table-striped table-hover mb-0 align-middle" id="tableMyBookings" style="display:none;">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th>Data</th>
+                            <th class="ps-4">Data</th>
                             <th>Horário</th>
                             <th>Sala</th>
                             <th>Evento</th>
                             <th class="text-center">Ação</th>
                         </tr>
                     </thead>
-                    <tbody id="tbodyMyBookings">
-                        </tbody>
+                    <tbody id="tbodyMyBookings"></tbody>
                 </table>
                 <div id="emptyMyBookings" class="text-center p-5 text-muted" style="display:none;">
-                    <i class="ti ti-calendar-off fs-1"></i>
-                    <p class="mt-2">Você não possui agendamentos futuros.</p>
+                    <i class="ti ti-calendar-off fs-1 text-secondary opacity-50"></i>
+                    <p class="mt-3">Você não possui agendamentos futuros.</p>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// --- FUNÇÕES DE NAVEGAÇÃO ---
-function mudarDia(delta) {
-    const input = document.getElementById('dateInput');
-    const currentDate = new Date(input.value + 'T12:00:00');
-    currentDate.setDate(currentDate.getDate() + delta);
-    input.value = currentDate.toISOString().split('T')[0];
-    document.getElementById('formFilter').submit();
-}
-
-function irParaHoje() {
-    const input = document.getElementById('dateInput');
-    const today = new Date();
-    const offset = today.getTimezoneOffset();
-    const localToday = new Date(today.getTime() - (offset*60*1000));
-    input.value = localToday.toISOString().split('T')[0];
-    document.getElementById('formFilter').submit();
-}
+const ajaxUrl = "{{ root_doc }}/plugins/roommanager/ajax/booking.php";
+const csrfToken = document.querySelector('meta[property="glpi:csrf_token"]')?.getAttribute('content');
+let modalReserva, modalCancelar, modalMinhasReservas;
+let currentId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl) });
-
-    const ajaxUrl = "{{ root_doc }}/plugins/roommanager/ajax/booking.php";
-    const csrfToken = document.querySelector('meta[property="glpi:csrf_token"]')?.getAttribute('content') || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-    let modalReserva, modalCancelar, modalMinhasReservas;
-    if (typeof bootstrap !== 'undefined') {
+    if(typeof bootstrap !== 'undefined') {
         modalReserva = new bootstrap.Modal(document.getElementById('modalReserva'));
         modalCancelar = new bootstrap.Modal(document.getElementById('modalCancelar'));
         modalMinhasReservas = new bootstrap.Modal(document.getElementById('modalMinhasReservas'));
     }
 
-    let currentBookingId = null;
-    let currentIsSeries = false;
-
-    function mostrarErro(msg) {
-        document.getElementById('txtErroModal').innerText = msg;
-        document.getElementById('msgErroModal').style.display = 'block';
-    }
-    
-    function limparErro() {
-        document.getElementById('msgErroModal').style.display = 'none';
-        document.getElementById('txtErroModal').innerText = '';
-    }
-
-    // --- ABRIR MODAL RESERVA ---
-    document.querySelectorAll('.btn-open-modal').forEach(btn => {
-        btn.addEventListener('click', function() {
-            limparErro();
-            document.getElementById('inputRoomId').value = this.dataset.roomId;
-            
-            const isBusy = this.dataset.roomBusy === "1";
-            const checkAllDay = document.getElementById('checkAllDay');
-            const labelAllDay = document.getElementById('labelAllDay');
-            const warningDiv  = document.getElementById('allDayWarning');
-
-            checkAllDay.checked = false; 
-            checkAllDay.disabled = isBusy; 
-            if (isBusy) { labelAllDay.classList.add('text-muted'); warningDiv.style.display = 'block'; } 
-            else { labelAllDay.classList.remove('text-muted'); warningDiv.style.display = 'none'; }
-            checkAllDay.dispatchEvent(new Event('change'));
-
-            setSelectValue('selectStart', this.dataset.slotStart);
-            setSelectValue('selectEnd', this.dataset.slotEnd);
-            
-            document.getElementById('eventTitle').value = "";
-            document.getElementById('checkRecur').checked = false;
-            document.getElementById('recurOptions').style.display = 'none';
-
-            modalReserva.show();
-            setTimeout(() => document.getElementById('eventTitle').focus(), 500);
-        });
+    document.getElementById('chkRecur').addEventListener('change', function() {
+        document.getElementById('recurBox').style.display = this.checked ? 'block' : 'none';
     });
 
-    function setSelectValue(id, value) {
-        const sel = document.getElementById(id);
-        if(!value) return;
-        for(let i=0; i<sel.options.length; i++) {
-            if(sel.options[i].value.substring(0,5) == value.substring(0,5)) { sel.selectedIndex = i; return; }
-        }
-        sel.selectedIndex = 0;
-    }
-
-    document.getElementById('checkAllDay').addEventListener('change', function() {
-        const startSel = document.getElementById('selectStart');
-        const endSel = document.getElementById('selectEnd');
-        startSel.disabled = this.checked; endSel.disabled = this.checked;
-        if(this.checked) { startSel.selectedIndex = 0; endSel.selectedIndex = endSel.options.length - 1; }
-    });
-
-    document.getElementById('checkRecur').addEventListener('change', function() {
-        document.getElementById('recurOptions').style.display = this.checked ? 'block' : 'none';
-    });
-
-    document.getElementById('btnConfirmReserva').addEventListener('click', function() {
-        limparErro();
-        const title = document.getElementById('eventTitle').value;
-        if (!title.trim()) { mostrarErro("Digite um título."); return; }
-
-        const startSel = document.getElementById('selectStart');
-        const endSel = document.getElementById('selectEnd');
-        if (!document.getElementById('checkAllDay').checked) {
-            if (startSel.value >= endSel.value) { mostrarErro("A hora final deve ser maior que a inicial."); return; }
-        }
-
+    document.getElementById('btnSalvar').addEventListener('click', function() {
         const btn = this;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Processando...';
-
-        const wasDisabled = startSel.disabled;
-        if(wasDisabled) { startSel.disabled = false; endSel.disabled = false; }
-        const formData = new FormData(document.getElementById('formReserva'));
-        if(wasDisabled) { startSel.disabled = true; endSel.disabled = true; }
-
-        formData.append('action', 'add_range'); 
-        enviarAjax(formData, function(data) {
-            if (data.success) window.location.reload();
-            else { mostrarErro(data.message); btn.disabled = false; btn.innerHTML = "Confirmar Reserva"; }
-        });
-    });
-
-    // --- CANCELAMENTO (GRID) ---
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation(); 
-            abrirModalCancelamento(this.dataset.bookingId, this.dataset.isSeries === "1");
-        });
-    });
-
-    // --- MINHAS RESERVAS (NOVA FUNÇÃO) ---
-    window.abrirMinhasReservas = function() {
-        modalMinhasReservas.show();
-        document.getElementById('loadingMyBookings').style.display = 'block';
-        document.getElementById('tableMyBookings').style.display = 'none';
-        document.getElementById('emptyMyBookings').style.display = 'none';
-        document.getElementById('tbodyMyBookings').innerHTML = '';
-
-        const formData = new FormData();
-        formData.append('action', 'get_my_bookings');
-
-        enviarAjax(formData, function(data) {
-            document.getElementById('loadingMyBookings').style.display = 'none';
-            if (data.success && data.bookings.length > 0) {
-                document.getElementById('tableMyBookings').style.display = 'table';
-                const tbody = document.getElementById('tbodyMyBookings');
-                
-                data.bookings.forEach(b => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="align-middle">${b.date_formatted}</td>
-                        <td class="align-middle fw-bold">${b.time}</td>
-                        <td class="align-middle">${b.room}</td>
-                        <td class="align-middle text-muted small">${b.title}</td>
-                        <td class="text-center align-middle">
-                            <button class="btn btn-outline-danger btn-sm" onclick="iniciarCancelamentoLista(${b.id}, ${b.is_series})">
-                                <i class="ti ti-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } else {
-                document.getElementById('emptyMyBookings').style.display = 'block';
-            }
-        });
-    }
-
-    // Função auxiliar para cancelar vindo da Lista
-    window.iniciarCancelamentoLista = function(id, isSeries) {
-        modalMinhasReservas.hide(); // Fecha a lista
-        abrirModalCancelamento(id, isSeries); // Abre a confirmação
-    }
-
-    function abrirModalCancelamento(id, isSeries) {
-        currentBookingId = id;
-        currentIsSeries = isSeries;
-        const btnSeries = document.getElementById('btnDeleteSeries');
-        const txtDetalhe = document.getElementById('txtDetalheCancelamento');
-
-        if (currentIsSeries) { btnSeries.style.display = 'block'; txtDetalhe.style.display = 'block'; } 
-        else { btnSeries.style.display = 'none'; txtDetalhe.style.display = 'none'; }
-        modalCancelar.show();
-    }
-
-    document.getElementById('btnDeleteSeries').addEventListener('click', function() { executarCancelamento(currentBookingId, true); });
-    document.getElementById('btnDeleteSingle').addEventListener('click', function() { executarCancelamento(currentBookingId, false); });
-
-    function executarCancelamento(id, deleteSeries) {
-        const formData = new FormData();
-        formData.append('action', 'delete');
-        formData.append('booking_id', id);
-        if (deleteSeries) formData.append('delete_series', '1');
-        
-        const btnId = deleteSeries ? 'btnDeleteSeries' : 'btnDeleteSingle';
-        const btn = document.getElementById(btnId);
-        const originalText = btn.innerHTML;
-        btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Processando...';
-
-        enviarAjax(formData, function(data) {
-            if(data.success) window.location.reload();
-            else { alert(data.message); btn.disabled = false; btn.innerHTML = originalText; }
-        });
-    }
-
-    function enviarAjax(formData, callback) {
+        const form = document.getElementById('formReserva');
+        const formData = new FormData(form);
+        formData.append('action', 'add_range');
         if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
-        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
-        if (csrfToken) headers['X-Glpi-Csrf-Token'] = csrfToken;
 
-        fetch(ajaxUrl, { method: 'POST', body: formData, headers: headers })
-        .then(r => r.json()).then(callback).catch(err => { alert("Erro de conexão."); });
-    }
+        if(formData.get('start_time') >= formData.get('end_time')) { 
+            alert('A hora final deve ser maior que a inicial.'); return; 
+        }
+
+        btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+        
+        fetch(ajaxUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest', 'X-Glpi-Csrf-Token': csrfToken} })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) location.reload();
+            else { alert(data.message); btn.disabled = false; btn.innerText = 'Confirmar Agendamento'; }
+        });
+    });
+
+    document.getElementById('btnDeleteSingle').onclick = () => doDelete(false);
+    document.getElementById('btnDeleteSeries').onclick = () => doDelete(true);
 });
+
+// Funções de Interface
+
+function mudarDia(d) {
+    const i = document.getElementById('dateInput');
+    const dt = new Date(i.value + 'T12:00:00'); dt.setDate(dt.getDate() + d);
+    i.value = dt.toISOString().split('T')[0]; document.getElementById('formFilter').submit();
+}
+
+function irParaHoje() {
+    const offset = new Date().getTimezoneOffset();
+    document.getElementById('dateInput').value = new Date(new Date().getTime() - (offset*60*1000)).toISOString().split('T')[0];
+    document.getElementById('formFilter').submit();
+}
+
+// 1. Abrir modal via clique no GRID (Sala Fixa)
+function abrirModalNovaReserva(roomId, hora) {
+    // Trava o select da sala
+    const selRoom = document.getElementById('selectRoomId');
+    selRoom.value = roomId;
+    selRoom.disabled = true; // Usuário vê mas não muda (pois clicou na coluna específica)
+    
+    // Adiciona campo hidden para enviar o ID mesmo com select disabled
+    // (Ou reabilita no submit, mas hidden é mais seguro)
+    // Vamos usar a estratégia de reabilitar rapidinho no submit ou apenas garantir que o form pegue
+    // Simplificando: vamos deixar disabled visualmente mas injetar um hidden se precisar
+    // Melhor: Deixar enabled mas focado. Ou melhor:
+    // O jeito mais fácil é deixar o select habilitado, mas selecionar a sala correta.
+    selRoom.disabled = false; // Permite mudar se quiser, ou pode travar se preferir UX estrita
+
+    document.getElementById('evtName').value = '';
+    setSelectValue('selStart', hora);
+    
+    let parts = hora.split(':');
+    let h = parseInt(parts[0]) + 1;
+    setSelectValue('selEnd', (h<10?'0'+h:h)+':'+parts[1]);
+    
+    modalReserva.show();
+    setTimeout(() => document.getElementById('evtName').focus(), 500);
+}
+
+// 2. Abrir modal via Botão Genérico (Escolhe Sala)
+window.abrirModalGenerico = function() {
+    const selRoom = document.getElementById('selectRoomId');
+    selRoom.disabled = false; // Habilita escolha
+    selRoom.selectedIndex = 0; // Reseta
+
+    document.getElementById('evtName').value = '';
+    document.getElementById('selStart').selectedIndex = 0; // 08:00
+    document.getElementById('selEnd').selectedIndex = 4;   // 09:00
+
+    modalReserva.show();
+}
+
+function setSelectValue(id, val) {
+    const sel = document.getElementById(id);
+    for(let i=0; i<sel.options.length; i++) { if(sel.options[i].value === val) { sel.selectedIndex = i; return; } }
+    sel.selectedIndex = sel.options.length - 1;
+}
+
+function abrirCancelamento(e, id, isSeries) {
+    e.stopPropagation(); currentId = id; 
+    document.getElementById('btnDeleteSeries').style.display = isSeries ? 'block' : 'none';
+    modalCancelar.show();
+}
+
+function doDelete(series) {
+    const fd = new FormData();
+    fd.append('action', 'delete'); fd.append('booking_id', currentId);
+    if(series) fd.append('delete_series', '1');
+    if (csrfToken) fd.append('_glpi_csrf_token', csrfToken);
+
+    fetch(ajaxUrl, { method: 'POST', body: fd, headers: {'X-Requested-With': 'XMLHttpRequest', 'X-Glpi-Csrf-Token': csrfToken} })
+    .then(r => r.json()).then(data => { if(data.success) location.reload(); else alert(data.message); });
+}
+
+window.abrirMinhasReservas = function() {
+    modalMinhasReservas.show();
+    document.getElementById('loadingMyBookings').style.display = 'block';
+    document.getElementById('tableMyBookings').style.display = 'none';
+    document.getElementById('emptyMyBookings').style.display = 'none';
+    document.getElementById('tbodyMyBookings').innerHTML = '';
+
+    const formData = new FormData(); formData.append('action', 'get_my_bookings');
+    fetch(ajaxUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+    .then(r => r.json()).then(data => {
+        document.getElementById('loadingMyBookings').style.display = 'none';
+        if (data.success && data.bookings.length > 0) {
+            document.getElementById('tableMyBookings').style.display = 'table';
+            const tbody = document.getElementById('tbodyMyBookings');
+            data.bookings.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="ps-4 fw-bold text-muted">${b.date_formatted}</td>
+                    <td><span class="badge bg-light text-dark border">${b.time}</span></td>
+                    <td>${b.room}</td>
+                    <td class="text-primary fw-bold">${b.title}</td>
+                    <td class="text-center">
+                        <button class="btn btn-outline-danger btn-sm" title="Excluir" onclick="iniciarCancelamentoLista(${b.id}, ${b.is_series})"><i class="ti ti-trash"></i></button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+        } else { document.getElementById('emptyMyBookings').style.display = 'block'; }
+    });
+}
+window.iniciarCancelamentoLista = function(id, isSeries) {
+    modalMinhasReservas.hide(); abrirCancelamento({stopPropagation:()=>{}}, id, isSeries);
+}
 </script>
