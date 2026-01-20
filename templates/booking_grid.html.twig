@@ -12,9 +12,8 @@
 
     .room-grid-container { margin: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
-    /* Container da Tabela */
     .table-responsive { 
-        overflow-x: auto; /* Permite rolar para o lado se tiver muitos horários */
+        overflow-x: auto; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         border-radius: 12px;
         background: white;
@@ -22,40 +21,35 @@
     }
     .room-grid { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
     
-    /* Células Padronizadas */
     .room-grid th, .room-grid td { 
         padding: 6px; text-align: center; vertical-align: middle; 
         border-bottom: 1px solid #f1f3f5; border-right: 1px dashed #f1f3f5;
-        /* AQUI ESTÁ O SEGREDO DO TAMANHO FIXO: */
-        width: 80px; 
-        min-width: 80px;
-        max-width: 80px;
+        width: 80px; min-width: 80px; max-width: 80px;
         box-sizing: border-box;
     }
 
-    /* Cabeçalho de Horários */
     .room-grid th { 
         background-color: white; color: #868e96; font-weight: 600; 
         text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;
         border-bottom: 2px solid #e9ecef; height: 50px;
     }
     
-    /* Coluna Sala (Fixa a Esquerda) */
+    /* Coluna Sala */
     .room-col { 
         position: sticky; left: 0; background: #fff; z-index: 10; 
         width: 200px !important; min-width: 200px !important; max-width: 200px !important;
         text-align: left !important; padding-left: 20px !important;
         border-right: 2px solid #e9ecef !important;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.02); /* Sombra suave para separar */
+        box-shadow: 2px 0 5px rgba(0,0,0,0.02);
     }
     .room-name { color: var(--scc-blue); font-size: 0.9em; font-weight: bold; white-space: normal; }
     .room-capacity { color: #adb5bd; font-size: 0.75em; margin-top: 2px; }
-    
+
     /* Botão Livre (+) */
     .btn-reservar { 
-        background-color: var(--scc-free-bg); color: var(--scc-green);       
+        background-color: var(--scc-free-bg); color: var(--scc-green);        
         border: 1px solid var(--scc-free-border); border-radius: 6px; 
-        width: 100%; height: 45px; /* Altura Fixa */
+        width: 100%; height: 45px; 
         cursor: pointer; transition: all 0.2s ease;
         display: flex; align-items: center; justify-content: center; font-weight: bold;
     }
@@ -76,18 +70,18 @@
     }
     .minha-reserva:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3); }
     
-    /* Ocupado (Outros) */
+    /* Ocupado */
     .ocupado-outros {
         background-color: #f1f3f5; border: 1px solid #dee2e6;
         color: #6c757d; border-radius: 6px; padding: 0;
         height: 45px; width: 100%;
         display: flex; align-items: center; justify-content: center;
         font-size: 0.8em; font-weight: 600;
-        cursor: help; /* Cursor de interrogação */
+        cursor: help;
     }
     .ocupado-outros:hover { background-color: #e9ecef; }
     
-    /* Botão de Cancelar (Lixeira) - Só aparece no hover */
+    /* Botão Cancelar */
     .btn-cancelar { 
         position: absolute; top: -5px; right: -5px; 
         color: white; background: #dc3545; 
@@ -133,7 +127,7 @@
                         {% for slot in slots %}
                             <th>{{ slot.formatted_start }}</th>
                         {% endfor %}
-                    </tr>
+                        </tr>
                 </thead>
                 <tbody>
                     {% for room in rooms %}
@@ -148,7 +142,6 @@
                                 
                                 <td>
                                     {% if booking %}
-                                        {# TOOLTIP: title contém os detalhes que aparecem no mouseover #}
                                         {% if is_mine %}
                                             <div class="minha-reserva" 
                                                  data-bs-toggle="tooltip" data-bs-html="true"
@@ -173,7 +166,8 @@
                                             <button class="btn-reservar btn-open-modal" 
                                                     data-room-id="{{ room.id }}" 
                                                     data-slot-start="{{ slot.start_time }}" 
-                                                    data-slot-end="{{ slot.end_time }}">
+                                                    data-slot-end="{{ slot.end_time }}"
+                                                    data-room-busy="{{ room_has_booking[room.id] is defined ? '1' : '0' }}">
                                                 <i class="ti ti-plus"></i>
                                             </button>
                                         {% else %}
@@ -182,7 +176,7 @@
                                     {% endif %}
                                 </td>
                             {% endfor %}
-                        </tr>
+                            </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -198,6 +192,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="msgErroModal" class="alert alert-danger p-2 mb-3" style="display:none; font-size: 0.9em;">
+                    <i class="ti ti-alert-circle"></i> <span id="txtErroModal"></span>
+                </div>
                 <form id="formReserva">
                     <input type="hidden" name="room_id" id="inputRoomId">
                     <input type="hidden" name="date" id="inputDate" value="{{ selected_date }}">
@@ -226,9 +223,15 @@
                         </div>
                     </div>
 
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="checkAllDay">
-                        <label class="form-check-label" for="checkAllDay">Dia Todo (08:00 - 18:00)</label>
+                    <div class="mb-3 bg-light p-3 rounded border">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="checkAllDay">
+                            <label class="form-check-label fw-bold" for="checkAllDay" id="labelAllDay">Dia Todo (08:00 - 18:00)</label>
+                        </div>
+                        
+                        <div id="allDayWarning" class="text-danger small mt-2" style="display:none;">
+                            <i class="ti ti-lock"></i> Opção indisponível pois já existem reservas neste dia.
+                        </div>
                     </div>
 
                     <div class="card bg-light border-0 mb-3">
@@ -260,7 +263,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
-    // 1. INICIALIZA TOOLTIPS (BALÃOZINHOS) DO BOOTSTRAP
+    // Inicializa Tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
@@ -270,25 +273,60 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[property="glpi:csrf_token"]')?.getAttribute('content') || 
                       document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    // Setup do Modal
     let modalReserva;
     if (typeof bootstrap !== 'undefined') {
         const modalEl = document.getElementById('modalReserva');
         modalReserva = new bootstrap.Modal(modalEl);
     }
 
-    // Abrir Modal
+    // Função para limpar erros e resetar visual
+    function limparErro() {
+        document.getElementById('msgErroModal').style.display = 'none';
+        document.getElementById('txtErroModal').innerText = '';
+    }
+
+    function mostrarErro(msg) {
+        document.getElementById('txtErroModal').innerText = msg;
+        document.getElementById('msgErroModal').style.display = 'block';
+    }
+
+    // --- ABERTURA DO MODAL ---
     document.querySelectorAll('.btn-open-modal').forEach(btn => {
         btn.addEventListener('click', function() {
+            limparErro(); // Limpa erros antigos
             document.getElementById('inputRoomId').value = this.dataset.roomId;
+            
+            const isBusy = this.dataset.roomBusy === "1";
+            const checkAllDay = document.getElementById('checkAllDay');
+            const labelAllDay = document.getElementById('labelAllDay');
+            const warningDiv  = document.getElementById('allDayWarning');
+
+            // Reset do checkbox Dia Todo
+            checkAllDay.checked = false; 
+            checkAllDay.disabled = isBusy; // Bloqueia se tiver ocupado
+            
+            // Atualiza visual do bloqueio
+            if (isBusy) {
+                labelAllDay.classList.add('text-muted');
+                warningDiv.style.display = 'block';
+            } else {
+                labelAllDay.classList.remove('text-muted');
+                warningDiv.style.display = 'none';
+            }
+            // Força atualização dos selects
+            checkAllDay.dispatchEvent(new Event('change'));
+
+            // Preenche horários
             const startTime = this.dataset.slotStart; 
-            const endTime = this.dataset.slotEnd;     
+            const endTime = this.dataset.slotEnd;      
             setSelectValue('selectStart', startTime);
             setSelectValue('selectEnd', endTime);
+            
+            // Limpa campos
             document.getElementById('eventTitle').value = "";
-            document.getElementById('checkAllDay').checked = false;
             document.getElementById('checkRecur').checked = false;
             document.getElementById('recurOptions').style.display = 'none';
+
             modalReserva.show();
             setTimeout(() => document.getElementById('eventTitle').focus(), 500);
         });
@@ -308,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if(!found) sel.selectedIndex = 0;
     }
 
-    // Checkboxes Lógica
+    // Lógica do Checkbox "Dia Todo"
     document.getElementById('checkAllDay').addEventListener('change', function() {
         const startSel = document.getElementById('selectStart');
         const endSel = document.getElementById('selectEnd');
@@ -327,22 +365,39 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('recurOptions').style.display = this.checked ? 'block' : 'none';
     });
 
-    // Confirmar Reserva
+    // --- CONFIRMAR RESERVA (CORRIGIDO) ---
     document.getElementById('btnConfirmReserva').addEventListener('click', function() {
+        limparErro();
         const title = document.getElementById('eventTitle').value;
-        if (!title.trim()) { alert("Digite um título."); return; }
+        if (!title.trim()) { mostrarErro("Digite um título para o evento."); return; }
 
+        // Verificação simples de horário (só se não for dia todo)
+        const startSel = document.getElementById('selectStart');
+        const endSel = document.getElementById('selectEnd');
+        
         if (!document.getElementById('checkAllDay').checked) {
-            const start = document.getElementById('selectStart').value;
-            const end = document.getElementById('selectEnd').value;
-            if (start >= end) { alert("A hora final deve ser maior que a inicial."); return; }
+            if (startSel.value >= endSel.value) { mostrarErro("A hora final deve ser maior que a inicial."); return; }
         }
 
         const btn = this;
         btn.disabled = true;
-        btn.innerHTML = "Processando...";
+        btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Processando...';
+
+        // TRUQUE DO MESTRE: Reativar campos disabled para o FormData pegar os valores
+        const wasDisabled = startSel.disabled;
+        if(wasDisabled) {
+            startSel.disabled = false;
+            endSel.disabled = false;
+        }
 
         const formData = new FormData(document.getElementById('formReserva'));
+        
+        // Bloqueia de novo imediatamente para o usuário não perceber
+        if(wasDisabled) {
+            startSel.disabled = true;
+            endSel.disabled = true;
+        }
+
         formData.append('action', 'add_range'); 
         if (csrfToken) formData.append('_glpi_csrf_token', csrfToken);
 
@@ -352,16 +407,25 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(ajaxUrl, { method: 'POST', body: formData, headers: headers })
         .then(r => r.json())
         .then(data => {
-            if (data.success) window.location.reload();
-            else { alert(data.message); btn.disabled = false; btn.innerHTML = "Confirmar Reserva"; }
+            if (data.success) {
+                window.location.reload();
+            } else { 
+                mostrarErro(data.message); // Mostra erro DENTRO do modal
+                btn.disabled = false; 
+                btn.innerHTML = "Confirmar Reserva"; 
+            }
         })
-        .catch(err => { alert("Erro ao processar."); });
+        .catch(err => { 
+            mostrarErro("Erro de conexão ao tentar reservar."); 
+            btn.disabled = false; 
+            btn.innerHTML = "Confirmar Reserva";
+        });
     });
 
-    // Cancelar
+    // Botão Deletar
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function(e) {
-            e.stopPropagation(); // Evita clicar na div e fazer algo indesejado
+            e.stopPropagation(); 
             const isSeries = this.dataset.isSeries === "1";
             let msg = "Cancelar esta reserva?";
             if (isSeries) msg = "Esta reserva é recorrente.\n[OK] = Cancelar TODAS.\n[Cancelar] = Desistir.";
